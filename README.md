@@ -39,7 +39,6 @@ candle = OHLCV(
 # Security Lookup Criteria
 criteria = SecurityCriteria(
     symbol="AAPL",
-    preferred_exchanges=["NASDAQ"],
     target_date="2023-12-01"
 )
 ```
