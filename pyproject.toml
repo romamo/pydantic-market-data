@@ -1,9 +1,9 @@
 [project]
 name = "pydantic-market-data"
-version = "0.1.4"
+version = "0.1.5"
 description = "Shared models and interfaces for finance datasources"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     { name = "Roman Medvedev", email = "pypi@romavm.dev" }
 ]
@@ -23,7 +23,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.0.0",
-    "pandas>=2.0.0",
+    "pandas>=3.0.0",
     "pydantic-extra-types>=2.11.0",
     "pycountry>=24.6.1",
 ]
