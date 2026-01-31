@@ -165,3 +165,5 @@ class SecurityCriteria(BaseModel):
     preferred_exchanges: Optional[List[str]] = None
     target_price: Optional[float] = None
     target_date: Optional[FlexibleDate] = None  # Flexible date parsing
+    currency: Optional[Currency] = None
+
