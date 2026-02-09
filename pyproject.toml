@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-market-data"
-version = "0.1.6"
+version = "0.1.7"
 description = "Shared models and interfaces for finance datasources"
 readme = "README.md"
 requires-python = ">=3.11"
