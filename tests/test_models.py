@@ -79,7 +79,7 @@ def test_flexible_datetime_parsing():
     # ISO string
     o1 = OHLCV(date="2023-01-01 12:00:00", close=100)
     assert o1.date == datetime(2023, 1, 1, 12, 0, 0)
-    
+
     # Date only string (defaults to 00:00:00)
     o2 = OHLCV(date="2023-01-01", close=100)
     assert o2.date == datetime(2023, 1, 1, 0, 0, 0)

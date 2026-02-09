@@ -36,7 +36,6 @@ else:
     FlexibleDatetime = Annotated[datetime, BeforeValidator(parse_datetime)]
 
 
-
 class HistoryInterval(str, Enum):
     IM1 = "1m"
     IM2 = "2m"
@@ -81,7 +80,6 @@ ISIN = Annotated[
 # ISIN is now defined above using Annotated for better str compatibility
 
 
-
 class Symbol(BaseModel):
     """
     Represents a resolved security symbol.
@@ -92,6 +90,7 @@ class Symbol(BaseModel):
     exchange: Optional[str] = None
     country: Optional[CountryAlpha2] = None
     currency: Optional[Currency] = None  # inferred
+    asset_class: Optional[str] = None
 
     def __init__(self, **data):
         # Allow lenient initialization for country (convert full names if possible or ignore)
@@ -165,4 +164,3 @@ class SecurityCriteria(BaseModel):
     target_price: Optional[float] = None
     target_date: Optional[FlexibleDate] = None  # Flexible date parsing
     currency: Optional[Currency] = None
-

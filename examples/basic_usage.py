@@ -35,9 +35,7 @@ def main():
     print("\n--- Security Criteria ---")
     try:
         # Valid ISIN & Date
-        c = SecurityCriteria(
-            isin="US0378331005", target_date=date(2023, 11, 15)
-        )
+        c = SecurityCriteria(isin="US0378331005", target_date=date(2023, 11, 15))
         print(f"Criteria: ISIN={c.isin}, Date={c.target_date}")
     except ValidationError as e:
         print(e)
