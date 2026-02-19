@@ -10,18 +10,18 @@ class DataSource(Protocol):
 
     def search(self, query: str) -> List[Symbol]:
         """
-        Search for a security by ISIN, symbol, or name.
+        Search for security by ISIN, symbol, or name
         """
         ...
 
     def resolve(self, criteria: SecurityCriteria) -> Optional[Symbol]:
         """
-        Resolve a security based on provided criteria.
+        Resolve security based on provided criteria
         """
         ...
 
     def history(self, ticker: str, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
         """
-        Fetch historical data for a ticker.
+        Fetch historical data for a ticker
         """
         ...

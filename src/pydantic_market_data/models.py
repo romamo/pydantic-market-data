@@ -7,8 +7,6 @@ from pydantic import BaseModel, BeforeValidator, StringConstraints
 from pydantic_extra_types.country import CountryAlpha2
 from pydantic_extra_types.currency_code import Currency
 
-# ...
-
 
 def parse_date(v: Any) -> Any:
     if isinstance(v, str):
@@ -72,12 +70,9 @@ ISIN = Annotated[
         pattern=r"^[A-Z]{2}[A-Z0-9]{9}\d$",
         min_length=12,
         max_length=12,
-        to_upper=True,  # Bonus: auto-uppercase
+        to_upper=True,
     ),
 ]
-
-
-# ISIN is now defined above using Annotated for better str compatibility
 
 
 class Symbol(BaseModel):
@@ -155,12 +150,13 @@ class SearchResult(Symbol):
 
 class SecurityCriteria(BaseModel):
     """
-    Criteria for resolving a security.
+    Criteria for resolving security
     """
 
     isin: Optional[ISIN] = None
     symbol: Optional[str] = None
     description: Optional[str] = None
     target_price: Optional[float] = None
-    target_date: Optional[FlexibleDate] = None  # Flexible date parsing
+    target_date: Optional[FlexibleDate] = None
     currency: Optional[Currency] = None
+    exchange: Optional[str] = None
