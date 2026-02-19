@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.11] - 2026-02-19
+
+### Added
+- `isin` field to `Symbol` model.
+
 ## [0.1.10] - 2026-02-19
 
 ### Added

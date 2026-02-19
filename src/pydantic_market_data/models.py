@@ -86,6 +86,7 @@ class Symbol(BaseModel):
     country: Optional[CountryAlpha2] = None
     currency: Optional[Currency] = None  # inferred
     asset_class: Optional[str] = None
+    isin: Optional[ISIN] = None
 
     def __init__(self, **data):
         # Allow lenient initialization for country (convert full names if possible or ignore)
