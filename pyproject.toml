@@ -1,6 +1,6 @@
 [project]
 name = "pydantic-market-data"
-version = "0.1.11"
+version = "0.1.12"
 description = "Shared models and interfaces for finance datasources"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,6 +24,7 @@ classifiers = [
 ]
 dependencies = [
     "pydantic>=2.0.0",
+    "pydantic-settings>=2.7.0",
     "pandas>=2.2.0",
     "pydantic-extra-types>=2.11.0",
     "pycountry>=24.6.1",
@@ -38,6 +39,10 @@ Issues = "https://github.com/romamo/pydantic-market-data/issues"
 dev-dependencies = [
     "ruff",
     "pytest",
+    "mypy>=1.15.0",
+    "bandit>=1.8.3",
+    "pytest-cov>=6.0.0",
+    "pandas-stubs",
 ]
 
 [tool.ruff]
@@ -45,7 +50,7 @@ line-length = 100
 target-version = "py310"
 
 [tool.ruff.lint]
-select = ["E", "F", "I"]
+select = ["E", "F", "I", "UP", "B", "SIM", "PLC", "PLE"]
 
 [build-system]
 requires = ["hatchling"]

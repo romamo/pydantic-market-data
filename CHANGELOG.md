@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.12] - 2026-02-22
+
+### Added
+- Dedicated `cli_models.py` with support for short flags (`-v`, `-vv`) and JSON schema printing.
+- `Ticker`, `ISIN`, `Price`, and `CountryAlpha2` strict Value Objects.
+- `PriceVerificationError` for detailed validation failures.
+- Automatic country resolution from names to Alpha-2 codes during initialization.
+- Strict-yet-flexible typing allowing primitives (strings/floats) in models during creation.
+
+### Changed
+- Refactored `Symbol` and `SecurityCriteria` to use new Value Objects and Input types.
+- Updated `DataSource` protocol to use `TickerInput` and `PriceInput` for better DX.
+- Enabled validation on assignment for `OHLCV` and `SecurityCriteria`.
+
+
 ## [0.1.11] - 2026-02-19
 
 ### Added

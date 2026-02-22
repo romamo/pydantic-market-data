@@ -1,37 +1,81 @@
+import re
 from datetime import date, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, List, Optional, TypeAlias, Union
+from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
 
 import pandas as pd
-from pydantic import BaseModel, BeforeValidator, StringConstraints
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    RootModel,
+)
 from pydantic_extra_types.country import CountryAlpha2
 from pydantic_extra_types.currency_code import Currency
 
+# Re-exported for downstream consumers
 
-def parse_date(v: Any) -> Any:
+
+def parse_date(v: date | str) -> date:
     if isinstance(v, str):
-        try:
-            return pd.to_datetime(v).date()
-        except (ValueError, TypeError):
-            pass
+        return pd.to_datetime(v).date()
     return v
 
 
-def parse_datetime(v: Any) -> Any:
+def parse_datetime(v: datetime | str) -> datetime:
     if isinstance(v, str):
-        try:
-            return pd.to_datetime(v).to_pydatetime()
-        except (ValueError, TypeError):
-            pass
+        return pd.to_datetime(v).to_pydatetime()
     return v
 
 
-if TYPE_CHECKING:
-    FlexibleDate: TypeAlias = Union[date, str]
-    FlexibleDatetime: TypeAlias = Union[datetime, str]
-else:
-    FlexibleDate = Annotated[date, BeforeValidator(parse_date)]
-    FlexibleDatetime = Annotated[datetime, BeforeValidator(parse_datetime)]
+def clean_isin(v: str | None) -> str | None:
+    """Cleans ISIN field, handles common junk like '-' from Yahoo."""
+    if v is None:
+        return None
+    v = v.strip().upper()
+    if not v or v == "-" or v == "NONE":
+        return None
+    return v
+
+
+def validate_isin(v: str | None) -> str | None:
+    v = clean_isin(v)
+    if v is None:
+        return None
+    if not re.match(r"^[A-Z]{2}[A-Z0-9]{9}\d$", v):
+        raise ValueError(f"Invalid ISIN format: {v}")
+
+    # Luhn checksum validation
+    def luhn_checksum(isin: str) -> bool:
+        # Convert ISIN to digits
+        # Letters A-Z map to 10-35
+        digits = []
+        for char in isin:
+            if char.isdigit():
+                digits.append(int(char))
+            else:
+                val = ord(char) - ord("A") + 10
+                digits.extend(divmod(val, 10)) if val >= 10 else digits.append(val)
+
+        # Apply Luhn from right to left
+        checksum = 0
+        reverse_digits = digits[::-1]
+        for i, digit in enumerate(reverse_digits):
+            if i % 2 == 1:
+                digit *= 2
+                if digit > 9:
+                    digit -= 9
+            checksum += digit
+        return checksum % 10 == 0
+
+    if not luhn_checksum(v):
+        raise ValueError(f"Invalid ISIN checksum: {v}")
+
+    return v
+
+
+FlexibleDate: TypeAlias = Annotated[date, BeforeValidator(parse_date)]
+FlexibleDatetime: TypeAlias = Annotated[datetime, BeforeValidator(parse_datetime)]
 
 
 class HistoryInterval(str, Enum):
@@ -64,15 +108,123 @@ class HistoryPeriod(str, Enum):
     MAX = "max"
 
 
-ISIN = Annotated[
-    str,
-    StringConstraints(
-        pattern=r"^[A-Z]{2}[A-Z0-9]{9}\d$",
-        min_length=12,
-        max_length=12,
-        to_upper=True,
-    ),
-]
+class Price(RootModel[float]):
+    """
+    Strict Value Object for prices to avoid primitive obsession everywhere.
+    """
+
+    @property
+    def value(self) -> float:
+        return self.root
+
+    def __str__(self) -> str:
+        return str(self.root)
+
+
+class StrictDate(RootModel[date]):
+    """
+    Strict Value Object for dates.
+    """
+
+    @property
+    def value(self) -> date:
+        return self.root
+
+    def __str__(self) -> str:
+        return str(self.root)
+
+
+class ISIN(RootModel[str]):
+    """
+    Strict Value Object for ISIN identifiers.
+    """
+
+    @property
+    def value(self) -> str:
+        return self.root
+
+    def __str__(self) -> str:
+        return self.root
+
+
+class Ticker(RootModel[str]):
+    """
+    Strict Value Object for ticker symbols to avoid primitive obsession.
+    """
+
+    @property
+    def value(self) -> str:
+        return self.root
+
+    def __str__(self) -> str:
+        return self.root
+
+
+class PriceVerificationError(Exception):
+    """
+    Exception raised when price verification fails.
+    Carries the actual market data for reporting.
+    """
+
+    def __init__(
+        self,
+        message: str,
+        ticker: str,
+        actual_date: date,
+        expected_price: float,
+        actual_low: float | None = None,
+        actual_high: float | None = None,
+        actual_close: float | None = None,
+    ):
+        super().__init__(message)
+        self.ticker = ticker
+        self.actual_date = actual_date
+        self.expected_price = expected_price
+        self.actual_low = actual_low
+        self.actual_high = actual_high
+        self.actual_close = actual_close
+
+    def __str__(self) -> str:
+        details = []
+        if self.actual_low is not None and self.actual_high is not None:
+            details.append(f"Range: {self.actual_low:.2f} - {self.actual_high:.2f}")
+        if self.actual_close is not None:
+            details.append(f"Close: {self.actual_close:.2f}")
+
+        msg = super().__str__()
+        if details:
+            msg += f" (Actual {', '.join(details)})"
+        return msg
+
+
+def validate_country_code(v: Any) -> Any:
+    if isinstance(v, str) and len(v) != 2:
+        import pycountry  # noqa: PLC0415
+
+        try:
+            found = pycountry.countries.lookup(v)
+            return found.alpha_2
+        except LookupError:
+            raise ValueError(f"Unknown country name: {v!r}") from None
+    return v
+
+
+if TYPE_CHECKING:
+    TickerInput = Ticker | str
+    CountryInput = CountryAlpha2 | str
+    CurrencyInput = Currency | str
+    PriceInput = Price | float
+    DateInput = StrictDate | date
+    ISINInput = ISIN | str | None
+    ISINField = ISIN | str | None
+else:
+    TickerInput = Ticker
+    CountryInput = Annotated[CountryAlpha2, BeforeValidator(validate_country_code)]
+    CurrencyInput = Currency
+    PriceInput = Price
+    DateInput = StrictDate
+    ISINInput = Annotated[ISIN | str | None, BeforeValidator(validate_isin)]
+    ISINField = Annotated[ISIN | str | None, BeforeValidator(validate_isin)]
 
 
 class Symbol(BaseModel):
@@ -80,19 +232,13 @@ class Symbol(BaseModel):
     Represents a resolved security symbol.
     """
 
-    ticker: str  # e.g., "AAPL:NSQ"
+    ticker: TickerInput  # e.g., "AAPL:NSQ"
     name: str  # e.g., "Apple Inc"
-    exchange: Optional[str] = None
-    country: Optional[CountryAlpha2] = None
-    currency: Optional[Currency] = None  # inferred
-    asset_class: Optional[str] = None
-    isin: Optional[ISIN] = None
-
-    def __init__(self, **data):
-        # Allow lenient initialization for country (convert full names if possible or ignore)
-        # But here we assume strictly cleaner data.
-        # Ideally, we should add a `BeforeValidator` to map "United States" -> "US"
-        super().__init__(**data)
+    exchange: str | None = None
+    country: CountryInput | None = None
+    currency: CurrencyInput | None = None
+    asset_class: str | None = None
+    isin: ISINField | None = None
 
 
 class OHLCV(BaseModel):
@@ -101,11 +247,13 @@ class OHLCV(BaseModel):
     """
 
     date: FlexibleDatetime
-    open: Optional[float] = None
-    high: Optional[float] = None
-    low: Optional[float] = None
-    close: Optional[float] = None
-    volume: Optional[float] = None
+    open: float | None = None
+    high: float | None = None
+    low: float | None = None
+    close: float | None = None
+    volume: float | None = None
+
+    model_config = ConfigDict(validate_assignment=True)
 
 
 class History(BaseModel):
@@ -114,7 +262,7 @@ class History(BaseModel):
     """
 
     symbol: Symbol
-    candles: List[OHLCV]
+    candles: list[OHLCV]
 
     def to_pandas(self) -> pd.DataFrame:
         """
@@ -154,10 +302,12 @@ class SecurityCriteria(BaseModel):
     Criteria for resolving security
     """
 
-    isin: Optional[ISIN] = None
-    symbol: Optional[str] = None
-    description: Optional[str] = None
-    target_price: Optional[float] = None
-    target_date: Optional[FlexibleDate] = None
-    currency: Optional[Currency] = None
-    exchange: Optional[str] = None
+    isin: ISINField | None = None
+    symbol: TickerInput | None = None
+    description: str | None = None
+    target_price: PriceInput | None = None
+    target_date: FlexibleDate | None = None
+    currency: CurrencyInput | None = None
+    exchange: str | None = None
+
+    model_config = ConfigDict(validate_assignment=True)
