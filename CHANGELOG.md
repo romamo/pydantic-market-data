@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.14] - 2026-02-22
+
+### Fixed
+- Recovery release following PyPI name reuse error on v0.1.13. No functional changes from v0.1.13.
+
 ## [0.1.13] - 2026-02-22
 
 ### Added
