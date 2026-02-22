@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [0.1.12] - 2026-02-22
+## [0.1.13] - 2026-02-22
 
 ### Added
 - Dedicated `cli_models.py` with support for short flags (`-v`, `-vv`) and JSON schema printing.

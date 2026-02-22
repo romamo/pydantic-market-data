@@ -3,7 +3,7 @@ import importlib.metadata
 try:
     __version__ = importlib.metadata.version("pydantic-market-data")
 except importlib.metadata.PackageNotFoundError:
-    __version__ = "0.1.11"
+    __version__ = "0.1.13"
 
 from .interfaces import DataSource
 from .models import (
