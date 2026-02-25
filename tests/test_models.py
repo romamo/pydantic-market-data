@@ -9,15 +9,15 @@ from pydantic_market_data.models import clean_isin, validate_isin
 
 def test_symbol_valid():
     s = Symbol(ticker="AAPL", name="Apple", country="US", currency="USD")
-    assert s.country == "US"
-    assert s.currency == "USD"
+    assert str(s.country) == "US"
+    assert str(s.currency) == "USD"
 
     # Test country name lookup
     s2 = Symbol(ticker="AAPL", name="Apple", country="United States", currency="USD")
-    assert s2.country == "US"
+    assert str(s2.country) == "US"
 
     s3 = Symbol(ticker="TSLA", name="Tesla", country="UNITED KINGDOM", currency="GBP")
-    assert s3.country == "GB"
+    assert str(s3.country) == "GB"
 
 
 def test_symbol_invalid_country():
@@ -35,7 +35,7 @@ def test_symbol_invalid_currency():
 
 def test_security_criteria_isin_valid():
     c = SecurityCriteria(isin="US0378331005")
-    assert c.isin == "US0378331005"
+    assert str(c.isin) == "US0378331005"
 
 
 def test_security_criteria_isin_invalid():

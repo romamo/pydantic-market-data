@@ -1,13 +1,15 @@
+from __future__ import annotations
+
 from datetime import date
 from typing import Protocol
 
 from .models import (
     History,
     HistoryPeriod,
-    PriceInput,
+    Price,
     SecurityCriteria,
     Symbol,
-    TickerInput,
+    Ticker,
 )
 
 
@@ -28,13 +30,17 @@ class DataSource(Protocol):
         """
         ...
 
-    def history(self, ticker: TickerInput, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
+    def history(self, ticker: Ticker.Input, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
         """
         Fetch historical data for a ticker
         """
         ...
 
-    def validate(self, ticker: TickerInput, target_date: date, target_price: PriceInput) -> bool:
+    def get_price(self, ticker: Ticker.Input, date: date | None = None) -> Price | None:
+        """Fetch the price for a ticker (current or historical)"""
+        ...
+
+    def validate(self, ticker: Ticker.Input, target_date: date, target_price: Price.Input) -> bool:
         """
         Validates if the ticker traded near the target price on the target date.
         """

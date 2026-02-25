@@ -5,10 +5,10 @@ from pydantic_market_data import (
     DataSource,
     History,
     HistoryPeriod,
-    PriceInput,
+    Price,
     SecurityCriteria,
     Symbol,
-    TickerInput,
+    Ticker,
 )
 
 
@@ -31,7 +31,7 @@ class MockDataSource(DataSource):
             )
         return None
 
-    def history(self, ticker: TickerInput, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
+    def history(self, ticker: Ticker.Input, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
         print(f"Fetching history for {ticker}, period={period}")
 
         return History(
@@ -51,7 +51,7 @@ class MockDataSource(DataSource):
         # Minimal implementation
         return []
 
-    def validate(self, ticker: TickerInput, target_date: date, target_price: PriceInput) -> bool:
+    def validate(self, ticker: Ticker.Input, target_date: date, target_price: Price.Input) -> bool:
         # Minimal implementation: always returns True
         print(f"Validating {ticker} on {target_date} at {target_price}")
         return True

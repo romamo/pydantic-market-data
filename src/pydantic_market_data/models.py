@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import re
 from datetime import date, datetime
 from enum import Enum
-from typing import TYPE_CHECKING, Annotated, Any, TypeAlias
+from typing import TYPE_CHECKING, Annotated, Any, ClassVar, TypeAlias
 
 import pandas as pd
 from pydantic import (
@@ -113,6 +115,11 @@ class Price(RootModel[float]):
     Strict Value Object for prices to avoid primitive obsession everywhere.
     """
 
+    if TYPE_CHECKING:
+        Input: TypeAlias = "Price" | float  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["Price", BeforeValidator(lambda v: v)]
+
     @property
     def value(self) -> float:
         return self.root
@@ -125,6 +132,11 @@ class StrictDate(RootModel[date]):
     """
     Strict Value Object for dates.
     """
+
+    if TYPE_CHECKING:
+        Input: TypeAlias = "StrictDate" | date  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["StrictDate", BeforeValidator(lambda v: v)]
 
     @property
     def value(self) -> date:
@@ -139,6 +151,11 @@ class ISIN(RootModel[str]):
     Strict Value Object for ISIN identifiers.
     """
 
+    if TYPE_CHECKING:
+        Input: TypeAlias = "ISIN" | str | None  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["ISIN | str | None", BeforeValidator(validate_isin)]
+
     @property
     def value(self) -> str:
         return self.root
@@ -152,12 +169,65 @@ class Ticker(RootModel[str]):
     Strict Value Object for ticker symbols to avoid primitive obsession.
     """
 
+    if TYPE_CHECKING:
+        Input: TypeAlias = "Ticker" | str  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["Ticker", BeforeValidator(lambda v: v)]
+
     @property
     def value(self) -> str:
         return self.root
 
     def __str__(self) -> str:
         return self.root
+
+
+def validate_country_code(v: Any) -> Any:
+    if isinstance(v, str) and len(v) != 2:
+        import pycountry  # noqa: PLC0415
+
+        try:
+            found = pycountry.countries.lookup(v)
+            return found.alpha_2
+        except LookupError:
+            raise ValueError(f"Unknown country name: {v!r}") from None
+    return v
+
+
+class Country(RootModel[CountryAlpha2]):
+    """
+    Strict Value Object for country codes.
+    """
+
+    if TYPE_CHECKING:
+        Input: TypeAlias = "Country" | CountryAlpha2 | str  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["Country", BeforeValidator(validate_country_code)]
+
+    @property
+    def value(self) -> CountryAlpha2:
+        return self.root
+
+    def __str__(self) -> str:
+        return str(self.root)
+
+
+class CurrencyCode(RootModel[Currency]):
+    """
+    Strict Value Object for currency codes.
+    """
+
+    if TYPE_CHECKING:
+        Input: TypeAlias = "CurrencyCode" | Currency | str  # type: ignore[misc]
+    else:
+        Input: ClassVar[Any] = Annotated["CurrencyCode", BeforeValidator(lambda v: v)]
+
+    @property
+    def value(self) -> Currency:
+        return self.root
+
+    def __str__(self) -> str:
+        return str(self.root)
 
 
 class PriceVerificationError(Exception):
@@ -197,34 +267,7 @@ class PriceVerificationError(Exception):
         return msg
 
 
-def validate_country_code(v: Any) -> Any:
-    if isinstance(v, str) and len(v) != 2:
-        import pycountry  # noqa: PLC0415
-
-        try:
-            found = pycountry.countries.lookup(v)
-            return found.alpha_2
-        except LookupError:
-            raise ValueError(f"Unknown country name: {v!r}") from None
-    return v
-
-
-if TYPE_CHECKING:
-    TickerInput = Ticker | str
-    CountryInput = CountryAlpha2 | str
-    CurrencyInput = Currency | str
-    PriceInput = Price | float
-    DateInput = StrictDate | date
-    ISINInput = ISIN | str | None
-    ISINField = ISIN | str | None
-else:
-    TickerInput = Ticker
-    CountryInput = Annotated[CountryAlpha2, BeforeValidator(validate_country_code)]
-    CurrencyInput = Currency
-    PriceInput = Price
-    DateInput = StrictDate
-    ISINInput = Annotated[ISIN | str | None, BeforeValidator(validate_isin)]
-    ISINField = Annotated[ISIN | str | None, BeforeValidator(validate_isin)]
+# Boundary types now handled via Namespace Pattern in VOs
 
 
 class Symbol(BaseModel):
@@ -232,18 +275,18 @@ class Symbol(BaseModel):
     Represents a resolved security symbol.
     """
 
-    ticker: TickerInput  # e.g., "AAPL:NSQ"
+    ticker: Ticker.Input  # e.g., "AAPL:NSQ"
     name: str  # e.g., "Apple Inc"
     exchange: str | None = None
-    country: CountryInput | None = None
-    currency: CurrencyInput | None = None
+    country: Country.Input | None = None
+    currency: CurrencyCode.Input | None = None
     asset_class: str | None = None
-    isin: ISINField | None = None
+    isin: ISIN.Input | None = None
 
 
 class OHLCV(BaseModel):
     """
-    Represents a single price candle.
+    Represents a single price range.
     """
 
     date: FlexibleDatetime
@@ -302,12 +345,12 @@ class SecurityCriteria(BaseModel):
     Criteria for resolving security
     """
 
-    isin: ISINField | None = None
-    symbol: TickerInput | None = None
+    isin: ISIN.Input | None = None
+    symbol: Ticker.Input | None = None
     description: str | None = None
-    target_price: PriceInput | None = None
+    target_price: Price.Input | None = None
     target_date: FlexibleDate | None = None
-    currency: CurrencyInput | None = None
+    currency: CurrencyCode.Input | None = None
     exchange: str | None = None
 
     model_config = ConfigDict(validate_assignment=True)

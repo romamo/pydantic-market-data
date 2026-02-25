@@ -11,7 +11,7 @@ from pydantic_market_data.cli_models import (
     EXCHANGE,
     FORMAT,
     ISIN,
-    LEVEL,
+    LIMIT,
     NAME,
     PATH,
     PATHS,
@@ -40,7 +40,7 @@ def test_custom_types_schema():
     assert TypeAdapter(PATH).json_schema() == {"type": "string"}
     assert TypeAdapter(PATHS).json_schema() == {"type": "string"}
     assert TypeAdapter(PRICE).json_schema() == {"type": "number"}
-    assert TypeAdapter(LEVEL).json_schema() == {"type": "integer"}
+    assert TypeAdapter(LIMIT).json_schema() == {"type": "integer"}
 
     # CURR should return the Currency enum schema
     curr_schema = TypeAdapter(CURR).json_schema()
@@ -57,7 +57,7 @@ def test_global_args_defaults():
 
 def test_search_args_defaults():
     args = SearchArgs()
-    assert args.limit == 100
+    assert args.limit == 1
     assert args.ticker is None
 
 
@@ -87,21 +87,22 @@ def test_patched_cli_settings_source_connect_root_parser(mock_add_argument):
 
     source._connect_root_parser(root_parser, None, add_argument_method=mock_add_argument)
 
-    # Verify that --vv was patched to also include -vv
+    # Verify that --vv was patched to also include -vv and --debug
     mock_add_argument.assert_any_call(
         root_parser,
-        "--vv",
         "-vv",
+        "--debug",
         dest="vv",
         default="==SUPPRESS==",
         help="Debug output (DEBUG level)",
         required=False,
         action="store_true",
     )
-    # Verify that -v was used (pydantic-settings uses -v for single-char alias)
+    # Verify that -v was patched to also include --verbose
     mock_add_argument.assert_any_call(
         root_parser,
         "-v",
+        "--verbose",
         dest="v",
         default="==SUPPRESS==",
         help="Verbose output (INFO level)",

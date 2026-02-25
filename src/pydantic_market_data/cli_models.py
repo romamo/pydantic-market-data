@@ -88,7 +88,7 @@ class PRICE(float):
         return core_schema.float_schema()
 
 
-class LEVEL(int):
+class LIMIT(int):
     @classmethod
     def __get_pydantic_core_schema__(
         cls, _st: Any, _h: GetCoreSchemaHandler
@@ -134,8 +134,8 @@ class GlobalArgs(BaseModel):
         cli_implicit_flags="toggle",
         cli_hide_none_type=True,
     )
-    v: bool = Field(False, alias="v", description="Verbose output (INFO level)")
-    vv: bool = Field(False, alias="vv", description="Debug output (DEBUG level)")
+    v: bool = Field(False, description="Verbose output (INFO level)")
+    vv: bool = Field(False, description="Debug output (DEBUG level)")
     format: FORMAT = Field(FORMAT("text"), description="Output format (text, json, yaml)")
     print_schema: bool = Field(
         False, alias="schema", description="Output the JSON schema of the CLI interface"
@@ -154,7 +154,7 @@ class SearchArgs(GlobalArgs):
     asset_class: CLASS | None = Field(None, description="Asset class (Equity, Commodity, etc.)")
     date: DATE | None = Field(None, description="Reference date for price/validation")
     price: PRICE | None = Field(None, description="Reference price for validation")
-    limit: LEVEL = Field(LEVEL(100), description="Maximum number of results to return")
+    limit: LIMIT = Field(LIMIT(1), description="Maximum number of results to return")
 
 
 class HistoryArgs(GlobalArgs):
@@ -204,11 +204,12 @@ class PatchedCliSettingsSource(CliSettingsSource):
 
         def patched_add_argument(parser: Any, *args: Any, **pkwargs: Any) -> Any:
             new_args = list(args)
-            # Support short flags in addition to long pydantic-settings flags
-            if "--vv" in new_args and "-vv" not in new_args:
-                new_args.append("-vv")
-            if "--v" in new_args and "-v" not in new_args:
-                new_args.append("-v")
+            # Support short and long flags for verbosity
+            if any(arg in new_args for arg in ("--v", "-v", "--verbose")):
+                new_args = ["-v", "--verbose"]
+
+            if any(arg in new_args for arg in ("--vv", "-vv", "--debug")):
+                new_args = ["-vv", "--debug"]
 
             # Use custom action for schema to bypass required args
             if "--schema" in new_args:
