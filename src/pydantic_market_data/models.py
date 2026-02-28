@@ -239,32 +239,53 @@ class PriceVerificationError(Exception):
     def __init__(
         self,
         message: str,
-        ticker: str,
-        actual_date: date,
-        expected_price: float,
-        actual_low: float | None = None,
-        actual_high: float | None = None,
-        actual_close: float | None = None,
+        ticker: Ticker.Input,
+        actual_date: date | str,
+        expected_price: Price.Input,
+        actual_low: Price.Input | None = None,
+        actual_high: Price.Input | None = None,
+        actual_close: Price.Input | None = None,
+        source: str | None = None,
     ):
         super().__init__(message)
-        self.ticker = ticker
-        self.actual_date = actual_date
-        self.expected_price = expected_price
-        self.actual_low = actual_low
-        self.actual_high = actual_high
-        self.actual_close = actual_close
+        self.ticker = ticker if isinstance(ticker, Ticker) else Ticker(ticker)
+        self.actual_date = parse_date(actual_date)
+        self.expected_price = (
+            expected_price if isinstance(expected_price, Price) else Price(expected_price)
+        )
+        self.actual_low = (
+            actual_low if isinstance(actual_low, Price) or actual_low is None else Price(actual_low)
+        )
+        self.actual_high = (
+            actual_high
+            if isinstance(actual_high, Price) or actual_high is None
+            else Price(actual_high)
+        )
+        self.actual_close = (
+            actual_close
+            if isinstance(actual_close, Price) or actual_close is None
+            else Price(actual_close)
+        )
+        self.source = source
 
     def __str__(self) -> str:
         details = []
         if self.actual_low is not None and self.actual_high is not None:
-            details.append(f"Range: {self.actual_low:.2f} - {self.actual_high:.2f}")
+            details.append(f"Range: {self.actual_low.value:.2f} - {self.actual_high.value:.2f}")
         if self.actual_close is not None:
-            details.append(f"Close: {self.actual_close:.2f}")
+            details.append(f"Close: {self.actual_close.value:.2f}")
 
-        msg = super().__str__()
+        parts = []
+        if self.source:
+            parts.append(f"{self.source}:")
+
+        # The message itself should explain the 'why' (e.g. "Price is outside daily range")
+        parts.append(super().__str__())
+
         if details:
-            msg += f" (Actual {', '.join(details)})"
-        return msg
+            parts.append(f"({', '.join(details)})")
+
+        return f"[{self.ticker.value}] {' '.join(parts)}"
 
 
 # Boundary types now handled via Namespace Pattern in VOs
