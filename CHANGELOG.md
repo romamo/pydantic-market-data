@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.16] - 2026-02-28
+
+### Refactored
+- Transition `PriceVerificationError` to use Value Objects (`Ticker`, `Price`) and improve string representation for better error reporting.
+
+## [0.1.15] - 2026-02-25
+
+### Changed
+- Adopted the **Namespace Pattern** for strict-yet-flexible typing (e.g., `Ticker.Input` instead of `TickerInput`) across all models and interfaces to improve Developer Experience and Mypy compatibility.
+
 ## [0.1.14] - 2026-02-22
 
 ### Fixed

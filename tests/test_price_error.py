@@ -14,14 +14,14 @@ def test_price_verification_error_primitives():
         actual_close=155.0,
         source="Yahoo",
     )
-    
+
     # Assert fields are coerced to VOs
     assert isinstance(err.ticker, Ticker)
     assert err.ticker.value == "AAPL"
     assert err.actual_date == date(2023, 1, 1)
     assert isinstance(err.expected_price, Price)
     assert err.expected_price.value == 150.0
-    
+
     # Check bounds
     assert isinstance(err.actual_low, Price)
     assert err.actual_low.value == 140.0
@@ -30,7 +30,7 @@ def test_price_verification_error_primitives():
     assert isinstance(err.actual_close, Price)
     assert err.actual_close.value == 155.0
     assert err.source == "Yahoo"
-    
+
     assert str(err) == "[AAPL] Yahoo: Price missing (Range: 140.00 - 160.00, Close: 155.00)"
 
 
@@ -42,13 +42,13 @@ def test_price_verification_error_vos():
         expected_price=Price(250.0),
         actual_close=Price(240.0),
     )
-    
+
     assert err.ticker.value == "MSFT"
     assert err.actual_date == date(2023, 2, 1)
     assert err.expected_price.value == 250.0
     assert err.actual_close.value == 240.0
     assert err.source is None
-    
+
     assert str(err) == "[MSFT] Price is outside daily range (Close: 240.00)"
 
 
@@ -59,5 +59,5 @@ def test_price_verification_error_no_details():
         actual_date="2023-01-01",
         expected_price=100.0,
     )
-    
+
     assert str(err) == "[TSLA] No data found"
