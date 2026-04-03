@@ -373,5 +373,6 @@ class SecurityCriteria(BaseModel):
     target_date: FlexibleDate | None = None
     currency: CurrencyCode.Input | None = None
     exchange: str | None = None
+    asset_class: str | None = None
 
     model_config = ConfigDict(validate_assignment=True)
