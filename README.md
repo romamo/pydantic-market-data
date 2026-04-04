@@ -1,7 +1,11 @@
 # pydantic-market-data
 
+[![PyPI version](https://img.shields.io/pypi/v/pydantic-market-data.svg)](https://pypi.org/project/pydantic-market-data/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![CI Status](https://github.com/romamo/pydantic-market-data/actions/workflows/ci.yml/badge.svg)](https://github.com/romamo/pydantic-market-data/actions)
+
 Shared Pydantic models and interfaces for financial data sources.
-Defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Symbol`, `History`) to interoperability between finance packages.
+Defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Symbol`, `History`) to ensure interoperability between finance packages.
 
 ## Installation
 
@@ -23,7 +27,9 @@ s = Symbol(
     ticker="AAPL",
     name="Apple Inc.",
     exchange="NASDAQ",
-    currency="USD"
+    currency="USD",
+    asset_class="Equity",
+    isin="US0378331005"
 )
 
 # Historical Data Point
@@ -39,6 +45,7 @@ candle = OHLCV(
 # Security Lookup Criteria
 criteria = SecurityCriteria(
     symbol="AAPL",
+    asset_class="Equity",
     target_date="2023-12-01" # Coerced to FlexibleDate
 )
 ```

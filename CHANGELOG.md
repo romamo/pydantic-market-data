@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.17] - 2026-04-04
+
+### Fixed
+- Added missing `asset_class` field to `SecurityCriteria` model (previously only available in `Symbol`).
+
 ## [0.1.16] - 2026-02-28
 
 ### Refactored

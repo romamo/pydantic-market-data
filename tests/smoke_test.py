@@ -20,11 +20,18 @@ def test_imports():
 
 
 def test_symbol_instantiation():
-    s = Symbol(ticker="AAPL", name="Apple Inc")
+    s = Symbol(ticker="AAPL", name="Apple Inc", asset_class="Equity", isin="US0378331005")
     assert str(s.ticker) == "AAPL"
     assert s.name == "Apple Inc"
+    assert s.asset_class == "Equity"
+    assert str(s.isin) == "US0378331005"
     assert s.exchange is None
     assert s.currency is None
+
+
+def test_security_criteria_asset_class():
+    sc = SecurityCriteria(asset_class="Fixed Income")
+    assert sc.asset_class == "Fixed Income"
 
 
 def test_security_criteria_date_coercion():
@@ -45,6 +52,7 @@ def test_history_interval_enum():
 if __name__ == "__main__":
     test_imports()
     test_symbol_instantiation()
+    test_security_criteria_asset_class()
     test_security_criteria_date_coercion()
     test_history_period_enum()
     test_history_interval_enum()
