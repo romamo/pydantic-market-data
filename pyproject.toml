@@ -76,3 +76,8 @@ exclude = [
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/pydantic_market_data"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+
