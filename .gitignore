@@ -314,3 +314,7 @@ dmypy.json
 cython_debug/
 
 .idea/
+
+# Added by oss-package-engineer
+.DS_Store
+*.pyc
