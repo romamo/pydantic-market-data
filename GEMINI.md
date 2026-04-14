@@ -1,6 +1,6 @@
 # pydantic-market-data
 
-Shared Pydantic models and interfaces for financial data sources. This project defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Symbol`, `History`) to ensure interoperability between finance packages.
+Shared Pydantic models and interfaces for financial data sources. This project defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Security`, `History`) to ensure interoperability between finance packages.
 
 ## Project Overview
 
@@ -12,7 +12,7 @@ Shared Pydantic models and interfaces for financial data sources. This project d
     - [Hatchling](https://hatch.pypa.io/latest/): Build backend.
     - [uv](https://github.com/astral-sh/uv): Fast Python package management.
 - **Key Components**:
-    - `models.py`: Core financial entities (`Symbol`, `OHLCV`, `History`, `Currency`, `ISIN`).
+    - `models.py`: Core financial entities (`Symbol`, `Security`, `OHLCV`, `History`, `Currency`, `ISIN`).
     - `interfaces.py`: `DataSource` Protocol defining `resolve`, `history`, and `search` methods.
     - `cli_models.py`: Specialized models for building professional CLIs with `pydantic-settings`, featuring cleaned-up help text, custom metavars, and verbosity flags (`-v`, `-vv`).
 

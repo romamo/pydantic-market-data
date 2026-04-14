@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.0] - 2026-04-14
+
+### Changed (Breaking)
+- **Symbol Migration**: Standardized naming to align with industrial standards.
+    - Renamed `Ticker` (RootModel) to `Symbol`.
+    - Renamed `Symbol` (BaseModel) to `Security`.
+    - In `Security`: Renamed `ticker` field to `symbol`.
+    - In `History`: Renamed `symbol` field to `security`.
+    - In `SecurityCriteria`: Ensured `symbol` field uses `Symbol.Input`.
+    - In `PriceVerificationError`: Renamed `ticker` field to `symbol`.
+    - Updated `DataSource` protocol and CLI models to use `symbol` instead of `ticker`.
+
 ## [0.1.17] - 2026-04-04
 
 ### Fixed

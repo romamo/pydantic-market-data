@@ -6,9 +6,9 @@ from pydantic_market_data import (
     History,
     HistoryPeriod,
     Price,
+    Security,
     SecurityCriteria,
     Symbol,
-    Ticker,
 )
 
 
@@ -17,13 +17,13 @@ class MockDataSource(DataSource):
     Example implementation of the DataSource protocol.
     """
 
-    def resolve(self, criteria: SecurityCriteria) -> Symbol | None:
+    def resolve(self, criteria: SecurityCriteria) -> Security | None:
         print(f"Resolving with criteria: {criteria}")
 
         # Simulate lookup logic
         if criteria.symbol == "AAPL" or criteria.isin == "US0378331005":
-            return Symbol(
-                ticker="AAPL",
+            return Security(
+                symbol="AAPL",
                 name="Apple Inc.",
                 exchange="NASDAQ",
                 country="US",
@@ -31,13 +31,13 @@ class MockDataSource(DataSource):
             )
         return None
 
-    def history(self, ticker: Ticker.Input, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
-        print(f"Fetching history for {ticker}, period={period}")
+    def history(self, symbol: Symbol.Input, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
+        print(f"Fetching history for {symbol}, period={period}")
 
         return History(
-            symbol=Symbol(
-                ticker=ticker,
-                name="Mock Ticker",
+            security=Security(
+                symbol=symbol,
+                name="Mock Security",
                 country="US",
                 currency="USD",
             ),
@@ -47,13 +47,13 @@ class MockDataSource(DataSource):
             ],
         )
 
-    def search(self, query: str) -> list[Symbol]:
+    def search(self, query: str) -> list[Security]:
         # Minimal implementation
         return []
 
-    def validate(self, ticker: Ticker.Input, target_date: date, target_price: Price.Input) -> bool:
+    def validate(self, symbol: Symbol.Input, target_date: date, target_price: Price.Input) -> bool:
         # Minimal implementation: always returns True
-        print(f"Validating {ticker} on {target_date} at {target_price}")
+        print(f"Validating {symbol} on {target_date} at {target_price}")
         return True
 
 
@@ -62,13 +62,13 @@ def main():
 
     # 1. Resolve
     criteria = SecurityCriteria(symbol="AAPL")
-    symbol = source.resolve(criteria)
+    security = source.resolve(criteria)
 
-    if symbol:
-        print(f"Resolved: {symbol.ticker} ({symbol.name})")
+    if security:
+        print(f"Resolved: {security.symbol} ({security.name})")
 
         # 2. History
-        hist = source.history(symbol.ticker)
+        hist = source.history(security.symbol)
         print(f"Got {len(hist.candles)} candles.")
     else:
         print("Not found.")

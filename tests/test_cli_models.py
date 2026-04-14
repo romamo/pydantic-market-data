@@ -58,7 +58,7 @@ def test_global_args_defaults():
 def test_search_args_defaults():
     args = SearchArgs()
     assert args.limit == 1
-    assert args.ticker is None
+    assert args.symbol is None
 
 
 def test_history_args_defaults():

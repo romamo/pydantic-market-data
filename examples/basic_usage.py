@@ -2,31 +2,31 @@ from datetime import date, datetime
 
 from pydantic import ValidationError
 
-from pydantic_market_data.models import OHLCV, History, SecurityCriteria, Symbol
+from pydantic_market_data.models import OHLCV, History, Security, SecurityCriteria
 
 
 def main():
-    print("--- Symbol Creation ---")
+    print("--- Security Creation ---")
     try:
-        # Valid Symbol
-        s = Symbol(
-            ticker="AAPL",
+        # Valid Security
+        s = Security(
+            symbol="AAPL",
             name="Apple Inc.",
             exchange="NASDAQ",
             country="US",  # Must be ISO 3166-1 alpha-2
             currency="USD",  # Must be ISO 4217
         )
-        print(f"Created Symbol: {s}")
+        print(f"Created Security: {s}")
     except ValidationError as e:
         print(f"Validation Error: {e}")
 
     print("\n--- Strict Validation Example ---")
     try:
         # Invalid Country
-        Symbol(
-            ticker="INVALID",
+        Security(
+            symbol="INVALID",
             name="Invalid Country",
-            country="United States",  # Will fail, requires "US"
+            country="Narnia",  # Will fail
             currency="USD",
         )
     except ValidationError as e:
@@ -46,7 +46,7 @@ def main():
         OHLCV(date=datetime(2023, 11, 15), close=150.0, volume=1000),
         OHLCV(date=datetime(2023, 11, 16), close=152.0, volume=1200),
     ]
-    h = History(symbol=s, candles=candles)
+    h = History(security=s, candles=candles)
 
     # Convert to DataFrame
     df = h.to_pandas()

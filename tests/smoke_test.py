@@ -4,13 +4,13 @@ from pydantic_market_data import (
     DataSource,
     HistoryInterval,
     HistoryPeriod,
+    Security,
     SecurityCriteria,
-    Symbol,
 )
 
 
 def test_imports():
-    assert issubclass(Symbol, object)
+    assert issubclass(Security, object)
     assert issubclass(SecurityCriteria, object)
     assert issubclass(HistoryPeriod, object)
     assert issubclass(HistoryInterval, object)
@@ -19,9 +19,9 @@ def test_imports():
     print("Smoke test passed: pydantic-market-data imported successfully.")
 
 
-def test_symbol_instantiation():
-    s = Symbol(ticker="AAPL", name="Apple Inc", asset_class="Equity", isin="US0378331005")
-    assert str(s.ticker) == "AAPL"
+def test_security_instantiation():
+    s = Security(symbol="AAPL", name="Apple Inc", asset_class="Equity", isin="US0378331005")
+    assert str(s.symbol) == "AAPL"
     assert s.name == "Apple Inc"
     assert s.asset_class == "Equity"
     assert str(s.isin) == "US0378331005"
@@ -51,7 +51,7 @@ def test_history_interval_enum():
 
 if __name__ == "__main__":
     test_imports()
-    test_symbol_instantiation()
+    test_security_instantiation()
     test_security_criteria_asset_class()
     test_security_criteria_date_coercion()
     test_history_period_enum()

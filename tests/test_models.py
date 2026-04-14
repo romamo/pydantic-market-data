@@ -3,34 +3,34 @@ from datetime import date, datetime
 import pytest
 from pydantic import ValidationError
 
-from pydantic_market_data import OHLCV, History, SecurityCriteria, Symbol, Ticker
+from pydantic_market_data import OHLCV, History, Security, SecurityCriteria, Symbol
 from pydantic_market_data.models import clean_isin, validate_isin
 
 
-def test_symbol_valid():
-    s = Symbol(ticker="AAPL", name="Apple", country="US", currency="USD")
+def test_security_valid():
+    s = Security(symbol="AAPL", name="Apple", country="US", currency="USD")
     assert str(s.country) == "US"
     assert str(s.currency) == "USD"
 
     # Test country name lookup
-    s2 = Symbol(ticker="AAPL", name="Apple", country="United States", currency="USD")
+    s2 = Security(symbol="AAPL", name="Apple", country="United States", currency="USD")
     assert str(s2.country) == "US"
 
-    s3 = Symbol(ticker="TSLA", name="Tesla", country="UNITED KINGDOM", currency="GBP")
+    s3 = Security(symbol="TSLA", name="Tesla", country="UNITED KINGDOM", currency="GBP")
     assert str(s3.country) == "GB"
 
 
-def test_symbol_invalid_country():
+def test_security_invalid_country():
     # "United States" is valid according to some extra-types logic if lenient?
     # But usually CountryAlpha2 expects 2 chars.
     # Let's test what rejects. "XX" is unlikely to be valid if it checks list.
     with pytest.raises(ValidationError):
-        Symbol(ticker="AAPL", name="Apple", country="ZZ", currency="USD")
+        Security(symbol="AAPL", name="Apple", country="ZZ", currency="USD")
 
 
-def test_symbol_invalid_currency():
+def test_security_invalid_currency():
     with pytest.raises(ValidationError):
-        Symbol(ticker="AAPL", name="Apple", country="US", currency="LOL")
+        Security(symbol="AAPL", name="Apple", country="US", currency="LOL")
 
 
 def test_security_criteria_isin_valid():
@@ -58,7 +58,7 @@ def test_history_to_pandas():
         OHLCV(date=datetime(2023, 1, 2), close=102.0, volume=1200),
     ]
     h = History(
-        symbol=Symbol(ticker="TEST", name="Test", country="US", currency="USD"), candles=candles
+        security=Security(symbol="TEST", name="Test", country="US", currency="USD"), candles=candles
     )
     df = h.to_pandas()
     assert not df.empty
@@ -105,7 +105,7 @@ def test_flexible_datetime_parsing():
 def test_validate_country_unknown_name():
     """T1: validate_country should raise for unknown country names (fail-fast)."""
     with pytest.raises(ValidationError, match="Unknown country name"):
-        Symbol(ticker="AAPL", name="Apple", country="Narnia", currency="USD")
+        Security(symbol="AAPL", name="Apple", country="Narnia", currency="USD")
 
 
 def test_clean_isin_edge_cases():
@@ -125,14 +125,14 @@ def test_clean_isin_edge_cases():
 def test_history_to_pandas_empty():
     """T3: to_pandas() on an empty History should return an empty DataFrame."""
     h = History(
-        symbol=Symbol(ticker="TEST", name="Test", country="US", currency="USD"),
+        security=Security(symbol="TEST", name="Test", country="US", currency="USD"),
         candles=[],
     )
     df = h.to_pandas()
     assert df.empty
 
 
-def test_ticker_str():
-    """T4: Ticker.__str__ should return the underlying string (RootModel)."""
-    t = Ticker("AAPL")
-    assert str(t) == "AAPL"
+def test_symbol_str():
+    """T4: Symbol.__str__ should return the underlying string (RootModel)."""
+    s = Symbol("AAPL")
+    assert str(s) == "AAPL"

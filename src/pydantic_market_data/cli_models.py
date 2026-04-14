@@ -143,9 +143,9 @@ class GlobalArgs(BaseModel):
 
 
 class SearchArgs(GlobalArgs):
-    """Lookup a ticker symbol"""
+    """Lookup a security symbol"""
 
-    ticker: SYMBOL | None = Field(None, description="Ticker symbol to search for")
+    symbol: SYMBOL | None = Field(None, description="Security symbol to search for")
     isin: ISIN | None = Field(None, description="ISIN code to search for")
     desc: NAME | None = Field(None, description="Security name or description")
     exchange: EXCHANGE | None = Field(None, description="Exchange code (e.g. US, L, GY)")
@@ -160,7 +160,7 @@ class SearchArgs(GlobalArgs):
 class HistoryArgs(GlobalArgs):
     """Fetch history and validate"""
 
-    ticker: SYMBOL | None = Field(None, description="Ticker symbol")
+    symbol: SYMBOL | None = Field(None, description="Security symbol")
     isin: ISIN | None = Field(None, description="ISIN code")
     desc: NAME | None = Field(None, description="Security description")
     exchange: EXCHANGE | None = Field(None, description="Exchange code")

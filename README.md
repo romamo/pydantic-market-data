@@ -5,7 +5,7 @@
 [![CI Status](https://github.com/romamo/pydantic-market-data/actions/workflows/ci.yml/badge.svg)](https://github.com/romamo/pydantic-market-data/actions)
 
 Shared Pydantic models and interfaces for financial data sources.
-Defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Symbol`, `History`) to ensure interoperability between finance packages.
+Defines a standard contract (`DataSource`) and data structures (`OHLCV`, `Security`, `History`) to ensure interoperability between finance packages.
 
 ## Installation
 
@@ -20,11 +20,11 @@ pip install pydantic-market-data
 Standardized data models for financial entities.
 
 ```python
-from pydantic_market_data.models import Symbol, OHLCV, History, SecurityCriteria, Ticker
+from pydantic_market_data.models import Security, OHLCV, History, SecurityCriteria, Symbol
 
-# Symbol Definition
-s = Symbol(
-    ticker="AAPL",
+# Security Definition
+s = Security(
+    symbol="AAPL",
     name="Apple Inc.",
     exchange="NASDAQ",
     currency="USD",
@@ -57,18 +57,18 @@ Implement the `DataSource` protocol to create compatible data providers.
 ```python
 from typing import Optional, List
 from pydantic_market_data.interfaces import DataSource
-from pydantic_market_data.models import SecurityCriteria, Symbol, History, Ticker, HistoryPeriod
+from pydantic_market_data.models import SecurityCriteria, Security, History, Symbol, HistoryPeriod
 
 class MySource(DataSource):
-    def resolve(self, criteria: SecurityCriteria) -> Optional[Symbol]:
+    def resolve(self, criteria: SecurityCriteria) -> Optional[Security]:
         # Implementation...
         pass
 
-    def history(self, ticker: Ticker | str, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
+    def history(self, symbol: Symbol | str, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
         # Implementation...
         pass
 
-    def search(self, query: str) -> List[Symbol]:
+    def search(self, query: str) -> List[Security]:
         # Implementation...
         pass
 ```
@@ -89,7 +89,7 @@ class MyCliSettings(BaseSettings):
         return (PatchedCliSettingsSource(settings_cls),)
 
 # Usage:
-# my-tool search --ticker AAPL --vv --format json
+# my-tool search --symbol AAPL --vv --format json
 ```
 
 Key CLI features:

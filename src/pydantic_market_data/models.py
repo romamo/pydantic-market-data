@@ -164,15 +164,15 @@ class ISIN(RootModel[str]):
         return self.root
 
 
-class Ticker(RootModel[str]):
+class Symbol(RootModel[str]):
     """
-    Strict Value Object for ticker symbols to avoid primitive obsession.
+    Strict Value Object for security symbols (e.g. AAPL) to avoid primitive obsession.
     """
 
     if TYPE_CHECKING:
-        Input: TypeAlias = "Ticker" | str  # type: ignore[misc]
+        Input: TypeAlias = "Symbol" | str  # type: ignore[misc]
     else:
-        Input: ClassVar[Any] = Annotated["Ticker", BeforeValidator(lambda v: v)]
+        Input: ClassVar[Any] = Annotated["Symbol", BeforeValidator(lambda v: v)]
 
     @property
     def value(self) -> str:
@@ -239,7 +239,7 @@ class PriceVerificationError(Exception):
     def __init__(
         self,
         message: str,
-        ticker: Ticker.Input,
+        symbol: Symbol.Input,
         actual_date: date | str,
         expected_price: Price.Input,
         actual_low: Price.Input | None = None,
@@ -248,7 +248,7 @@ class PriceVerificationError(Exception):
         source: str | None = None,
     ):
         super().__init__(message)
-        self.ticker = ticker if isinstance(ticker, Ticker) else Ticker(ticker)
+        self.symbol = symbol if isinstance(symbol, Symbol) else Symbol(symbol)
         self.actual_date = parse_date(actual_date)
         self.expected_price = (
             expected_price if isinstance(expected_price, Price) else Price(expected_price)
@@ -285,18 +285,18 @@ class PriceVerificationError(Exception):
         if details:
             parts.append(f"({', '.join(details)})")
 
-        return f"[{self.ticker.value}] {' '.join(parts)}"
+        return f"[{self.symbol.value}] {' '.join(parts)}"
 
 
 # Boundary types now handled via Namespace Pattern in VOs
 
 
-class Symbol(BaseModel):
+class Security(BaseModel):
     """
-    Represents a resolved security symbol.
+    Represents a resolved security.
     """
 
-    ticker: Ticker.Input  # e.g., "AAPL:NSQ"
+    symbol: Symbol.Input  # e.g., "AAPL:NSQ"
     name: str  # e.g., "Apple Inc"
     exchange: str | None = None
     country: Country.Input | None = None
@@ -325,7 +325,7 @@ class History(BaseModel):
     Represents a collection of historical price data.
     """
 
-    symbol: Symbol
+    security: Security
     candles: list[OHLCV]
 
     def to_pandas(self) -> pd.DataFrame:
@@ -357,7 +357,7 @@ class History(BaseModel):
         return df
 
 
-class SearchResult(Symbol):
+class SearchResult(Security):
     pass
 
 
@@ -367,7 +367,7 @@ class SecurityCriteria(BaseModel):
     """
 
     isin: ISIN.Input | None = None
-    symbol: Ticker.Input | None = None
+    symbol: Symbol.Input | None = None
     description: str | None = None
     target_price: Price.Input | None = None
     target_date: FlexibleDate | None = None

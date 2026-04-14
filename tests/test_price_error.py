@@ -1,12 +1,12 @@
 from datetime import date
 
-from pydantic_market_data import Price, PriceVerificationError, Ticker
+from pydantic_market_data import Price, PriceVerificationError, Symbol
 
 
 def test_price_verification_error_primitives():
     err = PriceVerificationError(
         message="Price missing",
-        ticker="AAPL",
+        symbol="AAPL",
         actual_date="2023-01-01",
         expected_price=150.0,
         actual_low=140.0,
@@ -16,8 +16,8 @@ def test_price_verification_error_primitives():
     )
 
     # Assert fields are coerced to VOs
-    assert isinstance(err.ticker, Ticker)
-    assert err.ticker.value == "AAPL"
+    assert isinstance(err.symbol, Symbol)
+    assert err.symbol.value == "AAPL"
     assert err.actual_date == date(2023, 1, 1)
     assert isinstance(err.expected_price, Price)
     assert err.expected_price.value == 150.0
@@ -37,13 +37,13 @@ def test_price_verification_error_primitives():
 def test_price_verification_error_vos():
     err = PriceVerificationError(
         message="Price is outside daily range",
-        ticker=Ticker("MSFT"),
+        symbol=Symbol("MSFT"),
         actual_date=date(2023, 2, 1),
         expected_price=Price(250.0),
         actual_close=Price(240.0),
     )
 
-    assert err.ticker.value == "MSFT"
+    assert err.symbol.value == "MSFT"
     assert err.actual_date == date(2023, 2, 1)
     assert err.expected_price.value == 250.0
     assert err.actual_close.value == 240.0
@@ -55,7 +55,7 @@ def test_price_verification_error_vos():
 def test_price_verification_error_no_details():
     err = PriceVerificationError(
         message="No data found",
-        ticker="TSLA",
+        symbol="TSLA",
         actual_date="2023-01-01",
         expected_price=100.0,
     )
