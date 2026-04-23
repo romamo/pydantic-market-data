@@ -2,6 +2,15 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.1] - 2026-04-23
+
+### Fixed
+- **FIGI check digit algorithm**: The Luhn algorithm was incorrectly applied to the expanded individual-digit list instead of the character-value list. Letters were split into two digits (e.g. `S=28 → [2, 8]`) before Luhn processing, causing parity misalignment for FIGIs that mix digits and letters in certain positions. The fix applies Luhn directly to character values (0–35) and uses `val % 10 + val // 10` as the digit-sum contribution, matching the OMG FIGI standard. Real-world identifiers such as `BBG00KHY5S69` (Broadcom Inc) were incorrectly rejected before this fix.
+
+### Chore
+- Pinned `astral-sh/setup-uv` GitHub Action to `v8.1.0`.
+- Updated GitHub Actions to Node.js 24-compatible versions.
+
 ## [0.3.0] - 2026-04-23
 
 ### Changed (Breaking)

@@ -140,10 +140,16 @@ def test_symbol_str():
 
 # BBG000B9XRY4 is Apple Inc's real FIGI
 _VALID_FIGI = "BBG000B9XRY4"
+# BBG00KHY5S69 is Broadcom Inc (AVGO) real FIGI
+_VALID_FIGI_BROADCOM = "BBG00KHY5S69"
 
 
 def test_figi_valid():
     assert validate_figi(_VALID_FIGI) == _VALID_FIGI
+
+
+def test_figi_valid_broadcom():
+    assert validate_figi(_VALID_FIGI_BROADCOM) == _VALID_FIGI_BROADCOM
 
 
 def test_figi_none():

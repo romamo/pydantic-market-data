@@ -90,20 +90,12 @@ def validate_figi(v: str | None) -> str | None:
         raise ValueError(f"Invalid FIGI format: {v}")
     if v[:2] in _FIGI_RESERVED:
         raise ValueError(f"Invalid FIGI prefix: {v[:2]}")
-    digits = []
-    for ch in v[:11]:
-        if ch.isdigit():
-            digits.append(int(ch))
-        else:
-            val = ord(ch) - ord("A") + 10
-            digits.extend(divmod(val, 10))
     total = 0
-    for i, d in enumerate(reversed(digits)):
+    for i, ch in enumerate(reversed(v[:11])):
+        val = int(ch) if ch.isdigit() else ord(ch) - ord("A") + 10
         if i % 2 == 1:
-            d *= 2
-            if d > 9:
-                d -= 9
-        total += d
+            val *= 2
+        total += val % 10 + val // 10
     if (10 - (total % 10)) % 10 != int(v[11]):
         raise ValueError(f"Invalid FIGI check digit: {v}")
     return v
