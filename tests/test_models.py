@@ -3,7 +3,7 @@ from datetime import date, datetime
 import pytest
 from pydantic import ValidationError
 
-from pydantic_market_data import OHLCV, History, Security, SecurityCriteria, Symbol
+from pydantic_market_data import OHLCV, History, PriceOnDate, Security, SecurityQuery, Symbol
 from pydantic_market_data.models import clean_isin, validate_figi, validate_isin
 
 
@@ -33,23 +33,23 @@ def test_security_invalid_currency():
         Security(symbol="AAPL", name="Apple", country="US", currency="LOL")
 
 
-def test_security_criteria_isin_valid():
-    c = SecurityCriteria(isin="US0378331005")
+def test_security_query_isin_valid():
+    c = SecurityQuery(isin="US0378331005")
     assert str(c.isin) == "US0378331005"
 
 
-def test_security_criteria_isin_invalid():
+def test_security_query_isin_invalid():
     # Length
     with pytest.raises(ValidationError):
-        SecurityCriteria(isin="US037833100")  # Too short
+        SecurityQuery(isin="US037833100")  # Too short
 
     # Pattern
     with pytest.raises(ValidationError):
-        SecurityCriteria(isin="U$0378331005")  # Bad char
+        SecurityQuery(isin="U$0378331005")  # Bad char
 
     # Checksum failure (valid pattern but bad digit)
     with pytest.raises(ValidationError):
-        SecurityCriteria(isin="US0378331006")
+        SecurityQuery(isin="US0378331006")
 
 
 def test_history_to_pandas():
@@ -71,20 +71,20 @@ def test_history_to_pandas():
 
 def test_flexible_date_parsing():
     # ISO Format
-    c1 = SecurityCriteria(target_date="2023-01-01")
-    assert c1.target_date == date(2023, 1, 1)
+    p1 = PriceOnDate(price=100.0, date="2023-01-01")
+    assert p1.date == date(2023, 1, 1)
 
     # Compressed Format
-    c2 = SecurityCriteria(target_date="20230101")
-    assert c2.target_date == date(2023, 1, 1)
+    p2 = PriceOnDate(price=100.0, date="20230101")
+    assert p2.date == date(2023, 1, 1)
 
     # Slash Format
-    c3 = SecurityCriteria(target_date="2023/01/01")
-    assert c3.target_date == date(2023, 1, 1)
+    p3 = PriceOnDate(price=100.0, date="2023/01/01")
+    assert p3.date == date(2023, 1, 1)
 
     # Original Date object
-    c4 = SecurityCriteria(target_date=date(2023, 1, 1))
-    assert c4.target_date == date(2023, 1, 1)
+    p4 = PriceOnDate(price=100.0, date=date(2023, 1, 1))
+    assert p4.date == date(2023, 1, 1)
 
 
 def test_flexible_datetime_parsing():
@@ -118,7 +118,7 @@ def test_clean_isin_edge_cases():
 
     assert validate_isin(None) is None
 
-    c1 = SecurityCriteria(isin=None)
+    c1 = SecurityQuery(isin=None)
     assert c1.isin is None
 
 

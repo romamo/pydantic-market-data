@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.0] - 2026-04-23
+
+### Changed (Breaking)
+- Renamed `SecurityCriteria` to `SecurityQuery`. No backward-compatibility alias.
+- Removed `target_price: Price.Input | None` and `target_date: FlexibleDate | None` from `SecurityQuery`. Both fields are now expressed as a single `price_on: PriceOnDate | None` field.
+
+### Added
+- `PriceOnDate` model (`price: Price.Input`, `date: FlexibleDate`) — exported from the top-level package.
+- `figi: FIGI.Input | None` field on `SecurityQuery` for resolving by Bloomberg Open FIGI.
+
 ## [0.2.1] - 2026-04-23
 
 ### Added

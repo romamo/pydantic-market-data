@@ -8,7 +8,7 @@ from .models import (
     HistoryPeriod,
     Price,
     Security,
-    SecurityCriteria,
+    SecurityQuery,
     Symbol,
 )
 
@@ -24,7 +24,7 @@ class DataSource(Protocol):
         """
         ...
 
-    def resolve(self, criteria: SecurityCriteria) -> Security | None:
+    def resolve(self, criteria: SecurityQuery) -> Security | None:
         """
         Resolve security based on provided criteria
         """

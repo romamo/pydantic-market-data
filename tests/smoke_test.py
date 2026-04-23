@@ -4,14 +4,16 @@ from pydantic_market_data import (
     DataSource,
     HistoryInterval,
     HistoryPeriod,
+    PriceOnDate,
     Security,
-    SecurityCriteria,
+    SecurityQuery,
 )
 
 
 def test_imports():
     assert issubclass(Security, object)
-    assert issubclass(SecurityCriteria, object)
+    assert issubclass(SecurityQuery, object)
+    assert issubclass(PriceOnDate, object)
     assert issubclass(HistoryPeriod, object)
     assert issubclass(HistoryInterval, object)
     # DataSource is a Protocol, not a class to subclass
@@ -29,14 +31,14 @@ def test_security_instantiation():
     assert s.currency is None
 
 
-def test_security_criteria_asset_class():
-    sc = SecurityCriteria(asset_class="Fixed Income")
-    assert sc.asset_class == "Fixed Income"
+def test_security_query_asset_class():
+    sq = SecurityQuery(asset_class="Fixed Income")
+    assert sq.asset_class == "Fixed Income"
 
 
-def test_security_criteria_date_coercion():
-    sc = SecurityCriteria(target_date="2024-01-15")
-    assert sc.target_date == date(2024, 1, 15)
+def test_price_on_date_coercion():
+    p = PriceOnDate(price=100.0, date="2024-01-15")
+    assert p.date == date(2024, 1, 15)
 
 
 def test_history_period_enum():
@@ -52,7 +54,7 @@ def test_history_interval_enum():
 if __name__ == "__main__":
     test_imports()
     test_security_instantiation()
-    test_security_criteria_asset_class()
-    test_security_criteria_date_coercion()
+    test_security_query_asset_class()
+    test_price_on_date_coercion()
     test_history_period_enum()
     test_history_interval_enum()

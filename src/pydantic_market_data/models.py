@@ -413,16 +413,21 @@ class SearchResult(Security):
     pass
 
 
-class SecurityCriteria(BaseModel):
+class PriceOnDate(BaseModel):
+    price: Price.Input
+    date: FlexibleDate
+
+
+class SecurityQuery(BaseModel):
     """
-    Criteria for resolving security
+    Criteria for resolving a security.
     """
 
     isin: ISIN.Input | None = None
+    figi: FIGI.Input | None = None
     symbol: Symbol.Input | None = None
     description: str | None = None
-    target_price: Price.Input | None = None
-    target_date: FlexibleDate | None = None
+    price_on: PriceOnDate | None = None
     currency: CurrencyCode.Input | None = None
     exchange: str | None = None
     asset_class: str | None = None
