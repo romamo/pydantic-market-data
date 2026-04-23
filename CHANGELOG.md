@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.2.1] - 2026-04-23
+
+### Added
+- `FIGI` Value Object with full format and Luhn check-digit validation, following the Namespace Pattern (`FIGI.Input`).
+- `figi: FIGI.Input | None` field on `Security` for Bloomberg Open FIGI identifiers.
+
 ## [0.2.0] - 2026-04-14
 
 ### Changed (Breaking)

@@ -22,6 +22,7 @@ from .cli_models import (
 )
 from .interfaces import DataSource
 from .models import (
+    FIGI,
     OHLCV,
     Country,
     CurrencyCode,
@@ -56,6 +57,7 @@ __all__ = [
     "CurrencyCode",
     "FlexibleDate",
     "FlexibleDatetime",
+    "FIGI",
     "ISIN",
     "SYMBOL",
     "NAME",

@@ -4,7 +4,7 @@ import pytest
 from pydantic import ValidationError
 
 from pydantic_market_data import OHLCV, History, Security, SecurityCriteria, Symbol
-from pydantic_market_data.models import clean_isin, validate_isin
+from pydantic_market_data.models import clean_isin, validate_figi, validate_isin
 
 
 def test_security_valid():
@@ -136,3 +136,54 @@ def test_symbol_str():
     """T4: Symbol.__str__ should return the underlying string (RootModel)."""
     s = Symbol("AAPL")
     assert str(s) == "AAPL"
+
+
+# BBG000B9XRY4 is Apple Inc's real FIGI
+_VALID_FIGI = "BBG000B9XRY4"
+
+
+def test_figi_valid():
+    assert validate_figi(_VALID_FIGI) == _VALID_FIGI
+
+
+def test_figi_none():
+    assert validate_figi(None) is None
+
+
+def test_figi_empty():
+    assert validate_figi("") is None
+
+
+def test_figi_wrong_length():
+    with pytest.raises(ValueError, match="Invalid FIGI format"):
+        validate_figi("BBG000B9XRY")  # 11 chars
+
+
+def test_figi_bad_position_3():
+    with pytest.raises(ValueError, match="Invalid FIGI format"):
+        validate_figi("BBX000B9XRY4")  # position 3 must be G
+
+
+def test_figi_reserved_prefix():
+    with pytest.raises(ValueError, match="Invalid FIGI prefix"):
+        validate_figi("BSG000B9XRY4")  # BS is a reserved prefix
+
+
+def test_figi_bad_check_digit():
+    with pytest.raises(ValueError, match="Invalid FIGI check digit"):
+        validate_figi("BBG000B9XRY3")  # check digit should be 4, not 3
+
+
+def test_security_figi_none():
+    s = Security(symbol="AAPL", name="Apple", figi=None)
+    assert s.figi is None
+
+
+def test_security_figi_valid():
+    s = Security(symbol="AAPL", name="Apple", figi=_VALID_FIGI)
+    assert str(s.figi) == _VALID_FIGI
+
+
+def test_security_figi_invalid():
+    with pytest.raises(ValidationError):
+        Security(symbol="AAPL", name="Apple", figi="NOTAFIGI")
