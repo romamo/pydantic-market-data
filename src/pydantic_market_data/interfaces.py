@@ -40,7 +40,13 @@ class DataSource(Protocol):
         """Fetch the price for a symbol (current or historical)"""
         ...
 
-    def validate(self, symbol: Symbol.Input, target_date: date, target_price: Price.Input) -> bool:
+    def validate(
+        self,
+        symbol: Symbol.Input,
+        target_date: date,
+        target_price: Price.Input,
+        price_tolerance: float = 0.10,
+    ) -> bool:
         """
         Validates if the symbol traded near the target price on the target date.
         """

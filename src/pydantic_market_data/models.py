@@ -345,6 +345,7 @@ class Security(BaseModel):
     country: Country.Input | None = None
     currency: CurrencyCode.Input | None = None
     asset_class: str | None = None
+    security_type: str | None = None
     isin: ISIN.Input | None = None
     figi: FIGI.Input | None = None
 

@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.3.2] - 2026-05-08
+
+### Added
+- `price_tolerance: float = 0.10` parameter on `DataSource.validate()` — allows callers to control the accepted price deviation instead of relying on an implicit default.
+- `security_type: str | None` field on `Security` for instrument-type classification (e.g. `"Common Stock"`, `"ETF"`).
+
 ## [0.3.1] - 2026-04-23
 
 ### Fixed
