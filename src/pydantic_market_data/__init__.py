@@ -24,6 +24,7 @@ from .interfaces import DataSource
 from .models import (
     FIGI,
     OHLCV,
+    AssetClass,
     Country,
     CurrencyCode,
     FlexibleDate,
@@ -42,6 +43,7 @@ from .models import (
 )
 
 __all__ = [
+    "AssetClass",
     "Symbol",
     "Security",
     "OHLCV",

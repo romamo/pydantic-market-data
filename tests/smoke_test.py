@@ -1,6 +1,7 @@
 from datetime import date
 
 from pydantic_market_data import (
+    AssetClass,
     DataSource,
     HistoryInterval,
     HistoryPeriod,
@@ -22,18 +23,18 @@ def test_imports():
 
 
 def test_security_instantiation():
-    s = Security(symbol="AAPL", name="Apple Inc", asset_class="Equity", isin="US0378331005")
+    s = Security(symbol="AAPL", name="Apple Inc", asset_class="equity", isin="US0378331005")
     assert str(s.symbol) == "AAPL"
     assert s.name == "Apple Inc"
-    assert s.asset_class == "Equity"
+    assert s.asset_class == AssetClass.EQUITY
     assert str(s.isin) == "US0378331005"
     assert s.exchange is None
     assert s.currency is None
 
 
 def test_security_query_asset_class():
-    sq = SecurityQuery(asset_class="Fixed Income")
-    assert sq.asset_class == "Fixed Income"
+    sq = SecurityQuery(asset_class="fixed_income")
+    assert sq.asset_class == AssetClass.FIXED_INCOME
 
 
 def test_price_on_date_coercion():

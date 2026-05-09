@@ -105,6 +105,19 @@ FlexibleDate: TypeAlias = Annotated[date, BeforeValidator(parse_date)]
 FlexibleDatetime: TypeAlias = Annotated[datetime, BeforeValidator(parse_datetime)]
 
 
+class AssetClass(str, Enum):
+    EQUITY = "equity"
+    FIXED_INCOME = "fixed_income"
+    CASH = "cash"
+    COMMODITY = "commodity"
+    REAL_ESTATE = "real_estate"
+    FX = "fx"
+    CRYPTO = "crypto"
+    DERIVATIVE = "derivative"
+    ALTERNATIVE = "alternative"
+    INDEX = "index"
+
+
 class HistoryInterval(str, Enum):
     IM1 = "1m"
     IM2 = "2m"
@@ -344,7 +357,7 @@ class Security(BaseModel):
     exchange: str | None = None
     country: Country.Input | None = None
     currency: CurrencyCode.Input | None = None
-    asset_class: str | None = None
+    asset_class: AssetClass | None = None
     security_type: str | None = None
     isin: ISIN.Input | None = None
     figi: FIGI.Input | None = None
@@ -420,9 +433,9 @@ class SecurityQuery(BaseModel):
     figi: FIGI.Input | None = None
     symbol: Symbol.Input | None = None
     description: str | None = None
-    price_on: PriceOnDate | None = None
+    price_on: list[PriceOnDate] | None = None
     currency: CurrencyCode.Input | None = None
     exchange: str | None = None
-    asset_class: str | None = None
+    asset_class: AssetClass | None = None
 
     model_config = ConfigDict(validate_assignment=True)

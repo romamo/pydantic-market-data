@@ -2,6 +2,16 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.0] - 2026-05-09
+
+### Added
+- `AssetClass` enum with values: `equity`, `fixed_income`, `cash`, `commodity`, `real_estate`, `fx`, `crypto`, `derivative`, `alternative`, `index`. Exported from the top-level package.
+
+### Changed (Breaking)
+- `Security.asset_class` changed from `str | None` to `AssetClass | None`. Pass a valid `AssetClass` value (e.g. `"equity"`) instead of a free-form string.
+- `SecurityQuery.asset_class` changed from `str | None` to `AssetClass | None`.
+- `SecurityQuery.price_on` changed from `PriceOnDate | None` to `list[PriceOnDate] | None` to support multi-date price queries.
+
 ## [0.3.2] - 2026-05-08
 
 ### Added
