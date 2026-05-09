@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.4.1] - 2026-05-09
+
+### Changed
+- `SecurityQuery.price_on` now accepts a single `PriceOnDate` (or a plain dict) in addition to a list; a single item is automatically wrapped in a list.
+
 ## [0.4.0] - 2026-05-09
 
 ### Added

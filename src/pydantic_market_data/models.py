@@ -424,6 +424,10 @@ class PriceOnDate(BaseModel):
     date: FlexibleDate
 
 
+def _coerce_price_on_list(v: Any) -> Any:
+    return [v] if not isinstance(v, list) else v
+
+
 class SecurityQuery(BaseModel):
     """
     Criteria for resolving a security.
@@ -433,7 +437,7 @@ class SecurityQuery(BaseModel):
     figi: FIGI.Input | None = None
     symbol: Symbol.Input | None = None
     description: str | None = None
-    price_on: list[PriceOnDate] | None = None
+    price_on: Annotated[list[PriceOnDate], BeforeValidator(_coerce_price_on_list)] | None = None
     currency: CurrencyCode.Input | None = None
     exchange: str | None = None
     asset_class: AssetClass | None = None
