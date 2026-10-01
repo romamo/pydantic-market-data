@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
@@ -316,7 +316,7 @@ def test_date_rejects_invalid(model):
 @pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
 def test_cli_parses_typed_asset_class_and_date(model):
     class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
-        model_config = SettingsConfigDict(cli_kebab_case=True)
+        pass
 
     argv = ["--asset-class", "Equity", "--date", "2024/01/15"]
     args = Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
@@ -330,3 +330,68 @@ def test_date_rejects_empty_and_nat_with_validation_error(model, raw):
     # pd.to_datetime returns NaT for these; NaT.date() raised a raw TypeError
     with pytest.raises(ValidationError, match="Invalid date"):
         model(date=raw)
+
+
+# --- Issue #10: kebab-case flags by default -----------------------------------------------
+
+
+def _cli_class(model: type, settings_first: bool) -> type[BaseSettings]:
+    if settings_first:
+
+        class CliSettingsFirst(BaseSettings, model):  # type: ignore[misc, valid-type]
+            pass
+
+        return CliSettingsFirst
+
+    class CliModelFirst(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    return CliModelFirst
+
+
+def _option_strings(source: PatchedCliSettingsSource) -> list[str]:
+    return [flag for action in source.root_parser._actions for flag in action.option_strings]
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs, SecurityQueryArgs, HistoryQueryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_patched_source_defaults_to_kebab_case(model, settings_first):
+    cli = _cli_class(model, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool")
+    assert source.cli_kebab_case is True
+    flags = _option_strings(source)
+    assert "--symbol" in flags
+    assert not [flag for flag in flags if "_" in flag]
+    if "asset_class" in model.model_fields:
+        assert "--asset-class" in flags
+
+
+def test_model_first_cli_config_is_not_kebab():
+    # Root cause of #10: BaseSettings' explicit cli_kebab_case=False wins the MRO config merge
+    assert _cli_class(SearchArgs, settings_first=False).model_config["cli_kebab_case"] is False
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_explicit_kebab_case_false_wins(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool", cli_kebab_case=False)
+    assert source.cli_kebab_case is False
+    flags = _option_strings(source)
+    assert "--asset_class" in flags
+    assert "--asset-class" not in flags
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_cli_parses_kebab_asset_class_end_to_end(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    argv = ["--asset-class", "equity"]
+    args = cli.model_validate(PatchedCliSettingsSource(cli, cli_parse_args=argv)())
+    assert args.asset_class is AssetClass.EQUITY
+
+
+def test_schema_flag_prints_and_exits_with_kebab_default(capsys):
+    cli = _cli_class(SearchArgs, settings_first=False)
+    with pytest.raises(SystemExit) as exc:
+        PatchedCliSettingsSource(cli, cli_parse_args=["--schema"])
+    assert exc.value.code == 0
+    assert "asset_class" in json.loads(capsys.readouterr().out)["properties"]

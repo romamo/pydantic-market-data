@@ -51,7 +51,7 @@ Built on top of `pydantic-settings` `CliSettingsSource`. Contains:
 - **`GlobalArgs`**: base model with `-v` / `-vv` / `--format` / `--schema` shared across all commands.
 - **`SecurityQueryArgs` / `HistoryQueryArgs`**: domain-only argument models (no CLI-framework fields), for frameworks that own `-v` / `--format` / `--schema` themselves.
 - **`SearchArgs` / `HistoryArgs`**: concrete command models, `class SearchArgs(SecurityQueryArgs, GlobalArgs)`. `GlobalArgs` is listed last so its fields come first (pydantic collects fields in reverse MRO); `tests/fixtures/cli_args_v0_6_0.json` freezes their schema and CLI parser structure.
-- **`PatchedCliSettingsSource`**: subclasses `CliSettingsSource` to (1) strip `(default: …)` noise from help text, (2) remap `--v`/`--vv` to `-v`/`-vv` short flags, and (3) wire `--schema` to a `PrintSchemaAction` that exits after printing the JSON schema, bypassing required-argument validation.
+- **`PatchedCliSettingsSource`**: subclasses `CliSettingsSource` to (1) strip `(default: …)` noise from help text, (2) remap `--v`/`--vv` to `-v`/`-vv` short flags, (3) wire `--schema` to a `PrintSchemaAction` that exits after printing the JSON schema, bypassing required-argument validation, and (4) default `cli_kebab_case` to `True` when the caller doesn't pass it, because pydantic merges `model_config` along the MRO and `class Cli(SearchArgs, BaseSettings)` would otherwise inherit BaseSettings' explicit `False`.
 
 ### Public API (`__init__.py`)
 

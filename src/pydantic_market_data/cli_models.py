@@ -2,12 +2,12 @@ import json
 import re
 from argparse import Action, ArgumentParser
 from collections.abc import Callable
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, BeforeValidator, Field, GetCoreSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic_core import core_schema
-from pydantic_settings import CliSettingsSource, SettingsConfigDict
+from pydantic_settings import BaseSettings, CliSettingsSource, SettingsConfigDict
 
 from .models import AssetClass, Currency, FlexibleDate, HistoryPeriod
 
@@ -203,7 +203,23 @@ class HistoryArgs(HistoryQueryArgs, GlobalArgs):
 
 
 class PatchedCliSettingsSource(CliSettingsSource):
-    """Custom CLI settings source to refine help text and flags."""
+    """Custom CLI settings source to refine help text and flags.
+
+    Defaults `cli_kebab_case` to True (`--asset-class`, not `--asset_class`). Pydantic merges
+    `model_config` along the MRO, so `class Cli(SearchArgs, BaseSettings)` picks up
+    BaseSettings' explicit `cli_kebab_case=False` and the models' own setting is lost.
+    Pass `cli_kebab_case=False` (or `"all"` / `"no_enums"`) to override.
+    """
+
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        *args: Any,
+        cli_kebab_case: bool | Literal["all", "no_enums"] | None = None,
+        **kwargs: Any,
+    ) -> None:
+        kwargs["cli_kebab_case"] = True if cli_kebab_case is None else cli_kebab_case
+        super().__init__(settings_cls, *args, **kwargs)
 
     def _help_format(
         self, field_name: str, field_info: FieldInfo, model_default: Any, is_model_suppressed: bool

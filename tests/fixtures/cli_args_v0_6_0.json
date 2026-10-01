@@ -640,7 +640,7 @@
       },
       {
         "option_strings": [
-          "--asset_class"
+          "--asset-class"
         ],
         "dest": "asset_class",
         "metavar": "{{EQUITY,FIXED_INCOME,CASH,COMMODITY,REAL_ESTATE,FX,CRYPTO,DERIVATIVE,ALTERNATIVE,INDEX},null}",
