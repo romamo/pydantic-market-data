@@ -98,13 +98,13 @@ Key CLI features:
 - **JSON Schema**: Adds a `--schema` flag to output the interface definition.
 - **Metavars**: Custom types (`SYMBOL`, `ISIN`, etc.) provide descriptive help labels.
 
-`SearchArgs` and `HistoryArgs` are `SecurityQueryArgs` and `HistoryQueryArgs` plus `GlobalArgs` (`-v`, `-vv`, `--format`, `--schema`). If your CLI framework already owns those options, use the domain-only `*QueryArgs` models instead:
+`SearchArgs` and `HistoryArgs` are `SecurityQueryArgs` and `HistoryQueryArgs` plus `GlobalArgs` (`-v`, `-vv`, `--format`, `--schema`). `SearchArgs` also adds `--limit`, a paging option that list-command frameworks are expected to own. If your CLI framework already owns those options, use the domain-only `*QueryArgs` models instead:
 
 ```python
 from pydantic_market_data import SecurityQueryArgs
 
 class SearchCommand(SecurityQueryArgs):
-    pass  # --symbol, --isin, ... without -v/--format/--schema
+    pass  # --symbol, --isin, ... without -v/--format/--schema/--limit
 ```
 
 ## License
