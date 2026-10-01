@@ -20,7 +20,7 @@ pip install pydantic-market-data
 Standardized data models for financial entities.
 
 ```python
-from pydantic_market_data.models import Security, OHLCV, History, SecurityCriteria, Symbol
+from pydantic_market_data.models import Security, OHLCV, SecurityQuery
 
 # Security Definition
 s = Security(
@@ -28,7 +28,7 @@ s = Security(
     name="Apple Inc.",
     exchange="NASDAQ",
     currency="USD",
-    asset_class="Equity",
+    asset_class="equity",  # AssetClass value
     isin="US0378331005"
 )
 
@@ -42,11 +42,11 @@ candle = OHLCV(
     volume=50000000
 )
 
-# Security Lookup Criteria
-criteria = SecurityCriteria(
+# Security Lookup Query
+query = SecurityQuery(
     symbol="AAPL",
-    asset_class="Equity",
-    target_date="2023-12-01" # Coerced to FlexibleDate
+    asset_class="equity",
+    price_on={"price": 190.0, "date": "2023-12-01"}  # Known price, coerced to list[PriceOnDate]
 )
 ```
 
@@ -55,22 +55,23 @@ criteria = SecurityCriteria(
 Implement the `DataSource` protocol to create compatible data providers.
 
 ```python
-from typing import Optional, List
 from pydantic_market_data.interfaces import DataSource
-from pydantic_market_data.models import SecurityCriteria, Security, History, Symbol, HistoryPeriod
+from pydantic_market_data.models import SecurityQuery, Security, History, Symbol, HistoryPeriod
 
 class MySource(DataSource):
-    def resolve(self, criteria: SecurityCriteria) -> Optional[Security]:
+    def resolve(self, criteria: SecurityQuery) -> Security | None:
         # Implementation...
         pass
 
-    def history(self, symbol: Symbol | str, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
+    def history(self, symbol: Symbol.Input, period: HistoryPeriod = HistoryPeriod.MO1) -> History:
         # Implementation...
         pass
 
-    def search(self, query: str) -> List[Security]:
+    def search(self, query: str) -> list[Security]:
         # Implementation...
         pass
+
+    # ...plus get_price() and validate()
 ```
 
 ## CLI Support
@@ -79,17 +80,17 @@ The package provides optimized `pydantic-settings` models for building professio
 
 ```python
 from pydantic_market_data.cli_models import SearchArgs, PatchedCliSettingsSource
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, CliSubCommand
 
 class MyCliSettings(BaseSettings):
-    search: SearchArgs
+    search: CliSubCommand[SearchArgs]
 
     @classmethod
     def settings_customise_sources(cls, settings_cls, **kwargs):
-        return (PatchedCliSettingsSource(settings_cls),)
+        return (PatchedCliSettingsSource(settings_cls, cli_parse_args=True),)
 
 # Usage:
-# my-tool search --symbol AAPL --vv --format json
+# my-tool search --symbol AAPL -vv --format json
 ```
 
 Key CLI features:
