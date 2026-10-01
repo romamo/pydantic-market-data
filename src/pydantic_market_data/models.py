@@ -22,7 +22,10 @@ from pydantic_extra_types.currency_code import Currency
 
 def parse_date(v: date | str) -> date:
     if isinstance(v, str):
-        return pd.to_datetime(v).date()
+        ts = pd.to_datetime(v)
+        if pd.isna(ts):
+            raise ValueError(f"Invalid date: {v!r}")
+        return ts.date()
     return v
 
 
