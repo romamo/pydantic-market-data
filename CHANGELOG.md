@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Fixed
+- The `--symbol SYMBOL` help test no longer fails when colour is forced (`FORCE_COLOR`) on Python 3.14, whose argparse colours `format_help()`: the test strips ANSI codes before matching, and a new test checks the help in a subprocess with `FORCE_COLOR=1` (#14)
+
 ## [0.6.0] - 2026-10-01
 
 ### Changed (Breaking)
