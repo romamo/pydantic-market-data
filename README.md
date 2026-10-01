@@ -87,9 +87,7 @@ class MyCliSettings(BaseSettings):
 
     @classmethod
     def settings_customise_sources(cls, settings_cls, **kwargs):
-        return (
-            PatchedCliSettingsSource(settings_cls, cli_parse_args=True, cli_implicit_flags=True),
-        )
+        return (PatchedCliSettingsSource(settings_cls, cli_parse_args=True),)
 
 # Usage:
 # my-tool search --symbol AAPL -vv --format json
