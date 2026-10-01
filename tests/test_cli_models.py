@@ -1,11 +1,12 @@
 import argparse
 import json
+from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import TypeAdapter
-from pydantic_settings import BaseSettings
+from pydantic import TypeAdapter, ValidationError
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
@@ -30,7 +31,7 @@ from pydantic_market_data.cli_models import (
     SearchArgs,
     SecurityQueryArgs,
 )
-from pydantic_market_data.models import HistoryPeriod
+from pydantic_market_data.models import AssetClass, HistoryPeriod
 
 
 def test_custom_types_schema():
@@ -167,7 +168,7 @@ def test_print_schema_action(capsys):
 
 # --- Issue #1: domain-only query models -------------------------------------------------
 
-_FIXTURE = Path(__file__).parent / "fixtures" / "cli_args_v0_4_1.json"
+_FIXTURE = Path(__file__).parent / "fixtures" / "cli_args_v0_6_0.json"
 _CLI_ONLY_KEYS = {"v", "vv", "format", "schema", "print_schema"}
 
 
@@ -201,7 +202,7 @@ def _cli_parser_structure(model: type) -> list[dict]:
 
 
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
-def test_cli_args_schema_unchanged_since_v0_4_1(model):
+def test_cli_args_schema_unchanged_since_v0_6_0(model):
     frozen = _frozen()[model.__name__]
     # json.dumps keeps key order, so property order, title, description, alias all count
     assert json.dumps(model.model_json_schema()) == json.dumps(frozen["schema"])
@@ -210,7 +211,7 @@ def test_cli_args_schema_unchanged_since_v0_4_1(model):
 
 
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
-def test_cli_args_parser_unchanged_since_v0_4_1(model):
+def test_cli_args_parser_unchanged_since_v0_6_0(model):
     structure = _cli_parser_structure(model)
     assert structure == _frozen()["parser"][model.__name__]
     option_strings = [action["option_strings"] for action in structure]
@@ -264,3 +265,60 @@ def test_query_args_exported_from_package():
     assert pmd.SecurityQueryArgs is SecurityQueryArgs
     assert pmd.HistoryQueryArgs is HistoryQueryArgs
     assert {"SecurityQueryArgs", "HistoryQueryArgs"} <= set(pmd.__all__)
+
+
+# --- Issue #6: typed asset_class and date ------------------------------------------------
+
+_QUERY_MODELS = [SecurityQueryArgs, HistoryQueryArgs, SearchArgs, HistoryArgs]
+
+
+@pytest.mark.parametrize("model", [SecurityQueryArgs, SearchArgs])
+def test_asset_class_schema_is_asset_class_enum(model):
+    schema = model.model_json_schema()
+    assert schema["properties"]["asset_class"]["anyOf"] == [
+        {"$ref": "#/$defs/AssetClass"},
+        {"type": "null"},
+    ]
+    assert schema["$defs"]["AssetClass"]["enum"] == [c.value for c in AssetClass]
+
+
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+def test_date_schema_has_date_format(model):
+    assert model.model_json_schema()["properties"]["date"]["anyOf"] == [
+        {"format": "date", "type": "string"},
+        {"type": "null"},
+    ]
+
+
+@pytest.mark.parametrize("raw", ["equity", "Equity", "EQUITY", AssetClass.EQUITY])
+def test_asset_class_is_case_insensitive(raw):
+    assert SecurityQueryArgs(asset_class=raw).asset_class is AssetClass.EQUITY
+
+
+@pytest.mark.parametrize("raw", ["stock", "", 1])
+def test_asset_class_rejects_unknown(raw):
+    with pytest.raises(ValidationError):
+        SecurityQueryArgs(asset_class=raw)
+
+
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+@pytest.mark.parametrize("raw", ["2024-01-15", "2024/01/15", "20240115", date(2024, 1, 15)])
+def test_date_accepts_flexible_formats(model, raw):
+    assert model(date=raw).date == date(2024, 1, 15)
+
+
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+def test_date_rejects_invalid(model):
+    with pytest.raises(ValidationError, match="month must be in 1..12"):
+        model(date="2024-13-01")
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+def test_cli_parses_typed_asset_class_and_date(model):
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        model_config = SettingsConfigDict(cli_kebab_case=True)
+
+    argv = ["--asset-class", "Equity", "--date", "2024/01/15"]
+    args = Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
+    assert args.asset_class is AssetClass.EQUITY
+    assert args.date == date(2024, 1, 15)

@@ -2,14 +2,22 @@ import json
 import re
 from argparse import Action, ArgumentParser
 from collections.abc import Callable
-from typing import Any
+from typing import Annotated, Any, TypeAlias
 
-from pydantic import BaseModel, Field, GetCoreSchemaHandler
+from pydantic import BaseModel, BeforeValidator, Field, GetCoreSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic_core import core_schema
 from pydantic_settings import CliSettingsSource, SettingsConfigDict
 
-from .models import Currency, HistoryPeriod
+from .models import AssetClass, Currency, FlexibleDate, HistoryPeriod
+
+
+def _lower_str(v: Any) -> Any:
+    return v.lower() if isinstance(v, str) else v
+
+
+# AssetClass that accepts any letter case on input ("Equity", "EQUITY" -> AssetClass.EQUITY)
+CaseInsensitiveAssetClass: TypeAlias = Annotated[AssetClass, BeforeValidator(_lower_str)]
 
 # Custom types for better CLI help labels (metavars)
 # We use classes instead of NewType because pydantic-settings uses __qualname__ for help text.
@@ -156,8 +164,10 @@ class SecurityQueryArgs(BaseModel):
     exchange: EXCHANGE | None = Field(None, description="Exchange code (e.g. US, L, GY)")
     currency: CURR | None = Field(None, description="Currency code (e.g. USD, EUR, GBP)")
     country: CC | None = Field(None, description="Two-letter country code")
-    asset_class: CLASS | None = Field(None, description="Asset class (Equity, Commodity, etc.)")
-    date: DATE | None = Field(None, description="Reference date for price/validation")
+    asset_class: CaseInsensitiveAssetClass | None = Field(
+        None, description="Asset class (equity, commodity, etc.)"
+    )
+    date: FlexibleDate | None = Field(None, description="Reference date for price/validation")
     price: PRICE | None = Field(None, description="Reference price for validation")
 
 
@@ -176,7 +186,7 @@ class HistoryQueryArgs(BaseModel):
     period: HistoryPeriod = Field(
         HistoryPeriod.MO1, description="Range of historical data (e.g. 1mo, 1y, max)"
     )
-    date: DATE | None = Field(None, description="Specific date to validate price against")
+    date: FlexibleDate | None = Field(None, description="Specific date to validate price against")
     price: PRICE | None = Field(None, description="Expected price for validation")
 
 

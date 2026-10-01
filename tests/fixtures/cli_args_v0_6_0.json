@@ -1,6 +1,24 @@
 {
   "SearchArgs": {
     "schema": {
+      "$defs": {
+        "AssetClass": {
+          "enum": [
+            "equity",
+            "fixed_income",
+            "cash",
+            "commodity",
+            "real_estate",
+            "fx",
+            "crypto",
+            "derivative",
+            "alternative",
+            "index"
+          ],
+          "title": "AssetClass",
+          "type": "string"
+        }
+      },
       "description": "Lookup a security symbol",
       "properties": {
         "v": {
@@ -282,19 +300,19 @@
         "asset_class": {
           "anyOf": [
             {
-              "type": "string"
+              "$ref": "#/$defs/AssetClass"
             },
             {
               "type": "null"
             }
           ],
           "default": null,
-          "description": "Asset class (Equity, Commodity, etc.)",
-          "title": "Asset Class"
+          "description": "Asset class (equity, commodity, etc.)"
         },
         "date": {
           "anyOf": [
             {
+              "format": "date",
               "type": "string"
             },
             {
@@ -452,6 +470,7 @@
         "date": {
           "anyOf": [
             {
+              "format": "date",
               "type": "string"
             },
             {
@@ -624,8 +643,8 @@
           "--asset_class"
         ],
         "dest": "asset_class",
-        "metavar": "{CLASS,null}",
-        "help": "Asset class (Equity, Commodity, etc.)",
+        "metavar": "{{EQUITY,FIXED_INCOME,CASH,COMMODITY,REAL_ESTATE,FX,CRYPTO,DERIVATIVE,ALTERNATIVE,INDEX},null}",
+        "help": "Asset class (equity, commodity, etc.)",
         "action": "_StoreAction",
         "nargs": null,
         "default_suppressed": true
@@ -635,7 +654,7 @@
           "--date"
         ],
         "dest": "date",
-        "metavar": "{DATE,null}",
+        "metavar": "{date,null}",
         "help": "Reference date for price/validation",
         "action": "_StoreAction",
         "nargs": null,
@@ -783,7 +802,7 @@
           "--date"
         ],
         "dest": "date",
-        "metavar": "{DATE,null}",
+        "metavar": "{date,null}",
         "help": "Specific date to validate price against",
         "action": "_StoreAction",
         "nargs": null,
