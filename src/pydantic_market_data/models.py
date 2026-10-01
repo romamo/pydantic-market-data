@@ -10,7 +10,9 @@ from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
+    Field,
     RootModel,
+    field_validator,
 )
 from pydantic_extra_types.country import CountryAlpha2
 from pydantic_extra_types.currency_code import Currency
@@ -384,7 +386,31 @@ class History(BaseModel):
     """
 
     security: Security
-    candles: list[OHLCV]
+    candles: list[OHLCV] = Field(
+        description="Candles in ascending date order",
+        json_schema_extra={"x-ordered": True},
+    )
+
+    @field_validator("candles")
+    @classmethod
+    def _check_ascending_dates(cls, v: list[OHLCV]) -> list[OHLCV]:
+        """Reject candles that are not in strictly ascending date order."""
+        for i in range(1, len(v)):
+            prev, curr = v[i - 1].date, v[i].date
+            prev_aware = prev.utcoffset() is not None
+            curr_aware = curr.utcoffset() is not None
+            if prev_aware != curr_aware:
+                raise ValueError(
+                    f"candles mix timezone-aware and naive dates: candle {i - 1} date "
+                    f"{prev.isoformat()} ({'aware' if prev_aware else 'naive'}), candle {i} "
+                    f"date {curr.isoformat()} ({'aware' if curr_aware else 'naive'})"
+                )
+            if curr <= prev:
+                raise ValueError(
+                    f"candles must be in strictly ascending date order: candle {i} date "
+                    f"{curr.isoformat()} is not after candle {i - 1} date {prev.isoformat()}"
+                )
+        return v
 
     def to_pandas(self) -> pd.DataFrame:
         """

@@ -2,6 +2,14 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Added
+- `History.candles` JSON Schema now declares `"x-ordered": true` and the description "Candles in ascending date order", so schema-driven serializers keep candle order (#2)
+
+### Changed
+- `History` now rejects candles that are not in strictly ascending date order (descending, unsorted, or duplicate dates) and candles that mix timezone-aware and naive dates, raising `ValidationError` that names the offending index and both dates; candles are not sorted automatically (#2)
+
 ## [0.4.1] - 2026-05-09
 
 ### Changed
