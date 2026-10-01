@@ -1,5 +1,9 @@
 import argparse
 import json
+import os
+import re
+import subprocess
+import sys
 from datetime import date
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -405,6 +409,14 @@ def _action(source: PatchedCliSettingsSource, flag: str) -> argparse.Action:
     return next(a for a in source.root_parser._actions if flag in a.option_strings)
 
 
+_ANSI_ESCAPE = re.compile(r"\x1b\[[0-9;]*m")
+
+
+def _strip_ansi(text: str) -> str:
+    """Drop the colour codes argparse adds to help on Python 3.14+ when colour is forced."""
+    return _ANSI_ESCAPE.sub("", text)
+
+
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
 @pytest.mark.parametrize("settings_first", [False, True])
 def test_patched_source_defaults_toggle_flags_and_hidden_none(model, settings_first):
@@ -413,12 +425,38 @@ def test_patched_source_defaults_toggle_flags_and_hidden_none(model, settings_fi
     assert source.cli_implicit_flags == "toggle"
     assert source.cli_hide_none_type is True
     assert _action(source, "--symbol").metavar == "SYMBOL"
-    assert "--symbol SYMBOL" in source.root_parser.format_help()
+    assert "--symbol SYMBOL" in _strip_ansi(source.root_parser.format_help())
     assert not [f for f in _option_strings(source) if f.startswith("--no-")]
     for flag, long_flag in (("-v", "--verbose"), ("-vv", "--debug")):
         action = _action(source, flag)
         assert action.option_strings == [flag, long_flag]
         assert action.nargs == 0
+
+
+_FORCED_COLOUR_HELP = """
+from pydantic_settings import BaseSettings
+from pydantic_market_data.cli_models import PatchedCliSettingsSource, SearchArgs
+
+class Cli(SearchArgs, BaseSettings):
+    pass
+
+print(PatchedCliSettingsSource(Cli, cli_prog_name="tool").root_parser.format_help())
+"""
+
+
+def test_help_metavar_survives_forced_colour():
+    """Issue #14: forced colour on Python 3.14+ must not hide `--symbol SYMBOL` in help."""
+    env = {k: v for k, v in os.environ.items() if k not in ("NO_COLOR", "PYTHON_COLORS")}
+    result = subprocess.run(
+        [sys.executable, "-c", _FORCED_COLOUR_HELP],
+        env={**env, "FORCE_COLOR": "1"},
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    if sys.version_info >= (3, 14):
+        assert "\x1b[" in result.stdout
+    assert "--symbol SYMBOL" in _strip_ansi(result.stdout)
 
 
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
