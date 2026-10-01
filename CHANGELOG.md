@@ -8,6 +8,9 @@ All notable changes to this project will be documented in this file.
 - `SecurityQueryArgs` no longer has a `limit` field (`--limit`): it is a paging option, not a domain field, and clashed with the `--limit` that list-command frameworks register themselves. `limit` is now declared on `SearchArgs`, whose fields, JSON schema, and CLI help are unchanged; code that read `limit` from a `SecurityQueryArgs` subclass must declare it itself (#5)
 - `SecurityQueryArgs.asset_class` is now `AssetClass | None` (was the `CLASS` str label) and accepts any letter case (`Equity`, `EQUITY`, `equity`); unknown values such as `stock` raise `ValidationError`. `date` on `SecurityQueryArgs` and `HistoryQueryArgs` is now `FlexibleDate | None` (`datetime.date`, was the `DATE` str label), accepting `2024-01-15`, `2024/01/15` and `20240115` and rejecting invalid dates. The JSON schema now carries the `AssetClass` enum and `"format": "date"`, so schema-driven CLIs can validate both. `SearchArgs` and `HistoryArgs` inherit the change; the `CLASS` and `DATE` classes stay exported. Compare `asset_class` as the enum (or `.value`, not `str(...)`) (#6)
 
+### Fixed
+- `FlexibleDate` now rejects empty, `nan`, and `NaT` strings with `ValidationError`; it raised a raw `TypeError` before (#6)
+
 ## [0.5.0] - 2026-10-01
 
 ### Added
