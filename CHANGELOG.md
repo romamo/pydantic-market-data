@@ -2,13 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.5.0] - 2026-10-01
 
 ### Added
 - `History.candles` JSON Schema now declares `"x-ordered": true` and the description "Candles in ascending date order", so schema-driven serializers keep candle order (#2)
 - `SecurityQueryArgs` and `HistoryQueryArgs`: domain-only argument models with the fields of `SearchArgs` / `HistoryArgs` but none of the CLI-framework options (`-v`, `-vv`, `--format`, `--schema`), for frameworks that own those options themselves. `SearchArgs` and `HistoryArgs` now compose them with `GlobalArgs`; their fields, JSON schema, and CLI help are unchanged. Exported from the top-level package (#1)
 
-### Changed
+### Changed (Breaking)
 - `History` now rejects candles that are not in strictly ascending date order (descending, unsorted, or duplicate dates) and candles that mix timezone-aware and naive dates, raising `ValidationError` that names the offending index and both dates; candles are not sorted automatically (#2)
 
 ## [0.4.1] - 2026-05-09
