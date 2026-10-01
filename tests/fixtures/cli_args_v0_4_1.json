@@ -1,0 +1,805 @@
+{
+  "SearchArgs": {
+    "schema": {
+      "description": "Lookup a security symbol",
+      "properties": {
+        "v": {
+          "default": false,
+          "description": "Verbose output (INFO level)",
+          "title": "V",
+          "type": "boolean"
+        },
+        "vv": {
+          "default": false,
+          "description": "Debug output (DEBUG level)",
+          "title": "Vv",
+          "type": "boolean"
+        },
+        "format": {
+          "default": "text",
+          "description": "Output format (text, json, yaml)",
+          "title": "Format",
+          "type": "string"
+        },
+        "schema": {
+          "default": false,
+          "description": "Output the JSON schema of the CLI interface",
+          "title": "Schema",
+          "type": "boolean"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Security symbol to search for",
+          "title": "Symbol"
+        },
+        "isin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ISIN code to search for",
+          "title": "Isin"
+        },
+        "desc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Security name or description",
+          "title": "Desc"
+        },
+        "exchange": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exchange code (e.g. US, L, GY)",
+          "title": "Exchange"
+        },
+        "currency": {
+          "anyOf": [
+            {
+              "enum": [
+                "AED",
+                "AFN",
+                "ALL",
+                "AMD",
+                "ANG",
+                "AOA",
+                "ARS",
+                "AUD",
+                "AWG",
+                "AZN",
+                "BAM",
+                "BBD",
+                "BDT",
+                "BGN",
+                "BHD",
+                "BIF",
+                "BMD",
+                "BND",
+                "BOB",
+                "BOV",
+                "BRL",
+                "BSD",
+                "BTN",
+                "BWP",
+                "BYN",
+                "BZD",
+                "CAD",
+                "CDF",
+                "CHE",
+                "CHF",
+                "CHW",
+                "CLF",
+                "CLP",
+                "CNY",
+                "COP",
+                "COU",
+                "CRC",
+                "CUC",
+                "CUP",
+                "CVE",
+                "CZK",
+                "DJF",
+                "DKK",
+                "DOP",
+                "DZD",
+                "EGP",
+                "ERN",
+                "ETB",
+                "EUR",
+                "FJD",
+                "FKP",
+                "GBP",
+                "GEL",
+                "GHS",
+                "GIP",
+                "GMD",
+                "GNF",
+                "GTQ",
+                "GYD",
+                "HKD",
+                "HNL",
+                "HRK",
+                "HTG",
+                "HUF",
+                "IDR",
+                "ILS",
+                "INR",
+                "IQD",
+                "IRR",
+                "ISK",
+                "JMD",
+                "JOD",
+                "JPY",
+                "KES",
+                "KGS",
+                "KHR",
+                "KMF",
+                "KPW",
+                "KRW",
+                "KWD",
+                "KYD",
+                "KZT",
+                "LAK",
+                "LBP",
+                "LKR",
+                "LRD",
+                "LSL",
+                "LYD",
+                "MAD",
+                "MDL",
+                "MGA",
+                "MKD",
+                "MMK",
+                "MNT",
+                "MOP",
+                "MRU",
+                "MUR",
+                "MVR",
+                "MWK",
+                "MXN",
+                "MXV",
+                "MYR",
+                "MZN",
+                "NAD",
+                "NGN",
+                "NIO",
+                "NOK",
+                "NPR",
+                "NZD",
+                "OMR",
+                "PAB",
+                "PEN",
+                "PGK",
+                "PHP",
+                "PKR",
+                "PLN",
+                "PYG",
+                "QAR",
+                "RON",
+                "RSD",
+                "RUB",
+                "RWF",
+                "SAR",
+                "SBD",
+                "SCR",
+                "SDG",
+                "SEK",
+                "SGD",
+                "SHP",
+                "SLE",
+                "SLL",
+                "SOS",
+                "SRD",
+                "SSP",
+                "STN",
+                "SVC",
+                "SYP",
+                "SZL",
+                "THB",
+                "TJS",
+                "TMT",
+                "TND",
+                "TOP",
+                "TRY",
+                "TTD",
+                "TWD",
+                "TZS",
+                "UAH",
+                "UGX",
+                "USD",
+                "USN",
+                "UYI",
+                "UYU",
+                "UYW",
+                "UZS",
+                "VED",
+                "VES",
+                "VND",
+                "VUV",
+                "WST",
+                "XAF",
+                "XCD",
+                "XOF",
+                "XPF",
+                "XSU",
+                "XUA",
+                "YER",
+                "ZAR",
+                "ZMW",
+                "ZWL"
+              ],
+              "maxLength": 3,
+              "minLength": 3,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Currency code (e.g. USD, EUR, GBP)",
+          "title": "Currency"
+        },
+        "country": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Two-letter country code",
+          "title": "Country"
+        },
+        "asset_class": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Asset class (Equity, Commodity, etc.)",
+          "title": "Asset Class"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference date for price/validation",
+          "title": "Date"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reference price for validation",
+          "title": "Price"
+        },
+        "limit": {
+          "default": 1,
+          "description": "Maximum number of results to return",
+          "title": "Limit",
+          "type": "integer"
+        }
+      },
+      "title": "SearchArgs",
+      "type": "object"
+    },
+    "fields": [
+      "v",
+      "vv",
+      "format",
+      "print_schema",
+      "symbol",
+      "isin",
+      "desc",
+      "exchange",
+      "currency",
+      "country",
+      "asset_class",
+      "date",
+      "price",
+      "limit"
+    ]
+  },
+  "HistoryArgs": {
+    "schema": {
+      "$defs": {
+        "HistoryPeriod": {
+          "enum": [
+            "1d",
+            "5d",
+            "1mo",
+            "3mo",
+            "6mo",
+            "1y",
+            "2y",
+            "5y",
+            "10y",
+            "ytd",
+            "max"
+          ],
+          "title": "HistoryPeriod",
+          "type": "string"
+        }
+      },
+      "description": "Fetch history and validate",
+      "properties": {
+        "v": {
+          "default": false,
+          "description": "Verbose output (INFO level)",
+          "title": "V",
+          "type": "boolean"
+        },
+        "vv": {
+          "default": false,
+          "description": "Debug output (DEBUG level)",
+          "title": "Vv",
+          "type": "boolean"
+        },
+        "format": {
+          "default": "text",
+          "description": "Output format (text, json, yaml)",
+          "title": "Format",
+          "type": "string"
+        },
+        "schema": {
+          "default": false,
+          "description": "Output the JSON schema of the CLI interface",
+          "title": "Schema",
+          "type": "boolean"
+        },
+        "symbol": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Security symbol",
+          "title": "Symbol"
+        },
+        "isin": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ISIN code",
+          "title": "Isin"
+        },
+        "desc": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Security description",
+          "title": "Desc"
+        },
+        "exchange": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exchange code",
+          "title": "Exchange"
+        },
+        "period": {
+          "$ref": "#/$defs/HistoryPeriod",
+          "default": "1mo",
+          "description": "Range of historical data (e.g. 1mo, 1y, max)"
+        },
+        "date": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Specific date to validate price against",
+          "title": "Date"
+        },
+        "price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Expected price for validation",
+          "title": "Price"
+        }
+      },
+      "title": "HistoryArgs",
+      "type": "object"
+    },
+    "fields": [
+      "v",
+      "vv",
+      "format",
+      "print_schema",
+      "symbol",
+      "isin",
+      "desc",
+      "exchange",
+      "period",
+      "date",
+      "price"
+    ]
+  },
+  "parser": {
+    "SearchArgs": [
+      {
+        "option_strings": [
+          "-h",
+          "--help"
+        ],
+        "dest": "help",
+        "metavar": null,
+        "help": "show this help message and exit",
+        "action": "_HelpAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-v",
+          "--verbose"
+        ],
+        "dest": "v",
+        "metavar": "bool",
+        "help": "Verbose output (INFO level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-vv",
+          "--debug"
+        ],
+        "dest": "vv",
+        "metavar": "bool",
+        "help": "Debug output (DEBUG level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--format"
+        ],
+        "dest": "format",
+        "metavar": "FORMAT",
+        "help": "Output format (text, json, yaml)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--schema"
+        ],
+        "dest": "schema",
+        "metavar": "bool",
+        "help": "Output the JSON schema of the CLI interface",
+        "action": "PrintSchemaAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--symbol"
+        ],
+        "dest": "symbol",
+        "metavar": "{SYMBOL,null}",
+        "help": "Security symbol to search for",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--isin"
+        ],
+        "dest": "isin",
+        "metavar": "{ISIN,null}",
+        "help": "ISIN code to search for",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--desc"
+        ],
+        "dest": "desc",
+        "metavar": "{NAME,null}",
+        "help": "Security name or description",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--exchange"
+        ],
+        "dest": "exchange",
+        "metavar": "{EXCHANGE,null}",
+        "help": "Exchange code (e.g. US, L, GY)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--currency"
+        ],
+        "dest": "currency",
+        "metavar": "{CURR,null}",
+        "help": "Currency code (e.g. USD, EUR, GBP)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--country"
+        ],
+        "dest": "country",
+        "metavar": "{CC,null}",
+        "help": "Two-letter country code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--asset_class"
+        ],
+        "dest": "asset_class",
+        "metavar": "{CLASS,null}",
+        "help": "Asset class (Equity, Commodity, etc.)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--date"
+        ],
+        "dest": "date",
+        "metavar": "{DATE,null}",
+        "help": "Reference date for price/validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--price"
+        ],
+        "dest": "price",
+        "metavar": "{PRICE,null}",
+        "help": "Reference price for validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--limit"
+        ],
+        "dest": "limit",
+        "metavar": "LIMIT",
+        "help": "Maximum number of results to return",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      }
+    ],
+    "HistoryArgs": [
+      {
+        "option_strings": [
+          "-h",
+          "--help"
+        ],
+        "dest": "help",
+        "metavar": null,
+        "help": "show this help message and exit",
+        "action": "_HelpAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-v",
+          "--verbose"
+        ],
+        "dest": "v",
+        "metavar": "bool",
+        "help": "Verbose output (INFO level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-vv",
+          "--debug"
+        ],
+        "dest": "vv",
+        "metavar": "bool",
+        "help": "Debug output (DEBUG level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--format"
+        ],
+        "dest": "format",
+        "metavar": "FORMAT",
+        "help": "Output format (text, json, yaml)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--schema"
+        ],
+        "dest": "schema",
+        "metavar": "bool",
+        "help": "Output the JSON schema of the CLI interface",
+        "action": "PrintSchemaAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--symbol"
+        ],
+        "dest": "symbol",
+        "metavar": "{SYMBOL,null}",
+        "help": "Security symbol",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--isin"
+        ],
+        "dest": "isin",
+        "metavar": "{ISIN,null}",
+        "help": "ISIN code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--desc"
+        ],
+        "dest": "desc",
+        "metavar": "{NAME,null}",
+        "help": "Security description",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--exchange"
+        ],
+        "dest": "exchange",
+        "metavar": "{EXCHANGE,null}",
+        "help": "Exchange code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--period"
+        ],
+        "dest": "period",
+        "metavar": "{D1,D5,MO1,MO3,MO6,Y1,Y2,Y5,Y10,YTD,MAX}",
+        "help": "Range of historical data (e.g. 1mo, 1y, max)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--date"
+        ],
+        "dest": "date",
+        "metavar": "{DATE,null}",
+        "help": "Specific date to validate price against",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--price"
+        ],
+        "dest": "price",
+        "metavar": "{PRICE,null}",
+        "help": "Expected price for validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      }
+    ]
+  }
+}

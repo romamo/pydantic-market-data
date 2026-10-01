@@ -1,8 +1,13 @@
+import argparse
 import json
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pydantic import TypeAdapter
+from pydantic_settings import BaseSettings
 
+import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
     CC,
     CLASS,
@@ -20,8 +25,10 @@ from pydantic_market_data.cli_models import (
     SYMBOL,
     GlobalArgs,
     HistoryArgs,
+    HistoryQueryArgs,
     PatchedCliSettingsSource,
     SearchArgs,
+    SecurityQueryArgs,
 )
 from pydantic_market_data.models import HistoryPeriod
 
@@ -156,3 +163,87 @@ def test_print_schema_action(capsys):
     schema_output = json.loads(captured.out)
     assert schema_output["title"] == "GlobalArgs"
     parser.exit.assert_called_once()
+
+
+# --- Issue #1: domain-only query models -------------------------------------------------
+
+_FIXTURE = Path(__file__).parent / "fixtures" / "cli_args_v0_4_1.json"
+_CLI_ONLY_KEYS = {"v", "vv", "format", "schema", "print_schema"}
+
+
+def _frozen() -> dict:
+    return json.loads(_FIXTURE.read_text())
+
+
+def _cli_parser_structure(model: type) -> list[dict]:
+    """The argparse actions a PatchedCliSettingsSource CLI over `model` registers, in order.
+
+    Compared structurally because rendered --help differs across Python versions
+    ("-v, --verbose bool" on 3.13+, "-v bool, --verbose bool" on 3.10) and terminal widths.
+    """
+
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    parser = PatchedCliSettingsSource(Cli, cli_prog_name="tool").root_parser
+    return [
+        {
+            "option_strings": list(action.option_strings),
+            "dest": action.dest,
+            "metavar": action.metavar,
+            "help": action.help,
+            "action": type(action).__name__,
+            "nargs": action.nargs,
+            "default_suppressed": action.default == argparse.SUPPRESS,
+        }
+        for action in parser._actions
+    ]
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+def test_cli_args_schema_unchanged_since_v0_4_1(model):
+    frozen = _frozen()[model.__name__]
+    # json.dumps keeps key order, so property order, title, description, alias all count
+    assert json.dumps(model.model_json_schema()) == json.dumps(frozen["schema"])
+    assert list(model.model_fields) == frozen["fields"]
+    assert list(model.model_fields)[:4] == ["v", "vv", "format", "print_schema"]
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+def test_cli_args_parser_unchanged_since_v0_4_1(model):
+    structure = _cli_parser_structure(model)
+    assert structure == _frozen()["parser"][model.__name__]
+    option_strings = [action["option_strings"] for action in structure]
+    for flags in (["-v", "--verbose"], ["-vv", "--debug"], ["--format"], ["--schema"]):
+        assert flags in option_strings
+    schema_action = next(a for a in structure if a["option_strings"] == ["--schema"])
+    assert schema_action["action"] == "PrintSchemaAction"
+
+
+@pytest.mark.parametrize(
+    ("query_model", "cli_model"),
+    [(SecurityQueryArgs, SearchArgs), (HistoryQueryArgs, HistoryArgs)],
+)
+def test_query_args_are_domain_only(query_model, cli_model):
+    schema = query_model.model_json_schema()
+    assert _CLI_ONLY_KEYS.isdisjoint(schema["properties"])
+    assert _CLI_ONLY_KEYS.isdisjoint(query_model.model_fields)
+    # Same domain fields, in the same order, as the CLI model minus the GlobalArgs fields
+    assert list(query_model.model_fields) == list(cli_model.model_fields)[4:]
+    assert issubclass(cli_model, query_model)
+    assert issubclass(cli_model, GlobalArgs)
+    assert not issubclass(query_model, GlobalArgs)
+    assert query_model.model_config == cli_model.model_config
+
+
+@pytest.mark.parametrize("model", [SecurityQueryArgs, HistoryQueryArgs])
+def test_query_args_cli_has_no_framework_flags(model):
+    flags = {f for action in _cli_parser_structure(model) for f in action["option_strings"]}
+    assert "--symbol" in flags
+    assert flags.isdisjoint({"-v", "--verbose", "-vv", "--debug", "--format", "--schema"})
+
+
+def test_query_args_exported_from_package():
+    assert pmd.SecurityQueryArgs is SecurityQueryArgs
+    assert pmd.HistoryQueryArgs is HistoryQueryArgs
+    assert {"SecurityQueryArgs", "HistoryQueryArgs"} <= set(pmd.__all__)
