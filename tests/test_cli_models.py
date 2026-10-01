@@ -1,8 +1,14 @@
+import io
 import json
+from contextlib import redirect_stdout
+from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import pytest
 from pydantic import TypeAdapter
+from pydantic_settings import BaseSettings, CliApp
 
+import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
     CC,
     CLASS,
@@ -20,8 +26,10 @@ from pydantic_market_data.cli_models import (
     SYMBOL,
     GlobalArgs,
     HistoryArgs,
+    HistoryQueryArgs,
     PatchedCliSettingsSource,
     SearchArgs,
+    SecurityQueryArgs,
 )
 from pydantic_market_data.models import HistoryPeriod
 
@@ -156,3 +164,75 @@ def test_print_schema_action(capsys):
     schema_output = json.loads(captured.out)
     assert schema_output["title"] == "GlobalArgs"
     parser.exit.assert_called_once()
+
+
+# --- Issue #1: domain-only query models -------------------------------------------------
+
+_FIXTURE = Path(__file__).parent / "fixtures" / "cli_args_v0_4_1.json"
+_CLI_ONLY_KEYS = {"v", "vv", "format", "schema", "print_schema"}
+
+
+def _frozen() -> dict:
+    return json.loads(_FIXTURE.read_text())
+
+
+def _cli_help(model: type) -> str:
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    buf = io.StringIO()
+    with redirect_stdout(buf), pytest.raises(SystemExit):
+        source = PatchedCliSettingsSource(Cli, cli_prog_name="tool")
+        CliApp.run(Cli, cli_args=["--help"], cli_settings_source=source)
+    return buf.getvalue()
+
+
+def _squash(text: str) -> str:
+    # argparse wraps to the terminal width; compare content, not layout
+    return " ".join(text.split())
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+def test_cli_args_schema_unchanged_since_v0_4_1(model):
+    frozen = _frozen()[model.__name__]
+    # json.dumps keeps key order, so property order, title, description, alias all count
+    assert json.dumps(model.model_json_schema()) == json.dumps(frozen["schema"])
+    assert list(model.model_fields) == frozen["fields"]
+    assert list(model.model_fields)[:4] == ["v", "vv", "format", "print_schema"]
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+def test_cli_args_help_unchanged_since_v0_4_1(model):
+    help_text = _cli_help(model)
+    assert _squash(help_text) == _squash(_frozen()["help"][model.__name__])
+    for flag in ("-v, --verbose", "-vv, --debug", "--format FORMAT", "--schema"):
+        assert flag in help_text
+
+
+@pytest.mark.parametrize(
+    ("query_model", "cli_model"),
+    [(SecurityQueryArgs, SearchArgs), (HistoryQueryArgs, HistoryArgs)],
+)
+def test_query_args_are_domain_only(query_model, cli_model):
+    schema = query_model.model_json_schema()
+    assert _CLI_ONLY_KEYS.isdisjoint(schema["properties"])
+    assert _CLI_ONLY_KEYS.isdisjoint(query_model.model_fields)
+    # Same domain fields, in the same order, as the CLI model minus the GlobalArgs fields
+    assert list(query_model.model_fields) == list(cli_model.model_fields)[4:]
+    assert issubclass(cli_model, query_model)
+    assert issubclass(cli_model, GlobalArgs)
+    assert not issubclass(query_model, GlobalArgs)
+    assert query_model.model_config == cli_model.model_config
+
+
+def test_query_args_help_has_no_framework_flags():
+    help_text = _cli_help(SecurityQueryArgs)
+    assert "--symbol" in help_text
+    for flag in ("--verbose", "--debug", "--format", "--schema"):
+        assert flag not in help_text
+
+
+def test_query_args_exported_from_package():
+    assert pmd.SecurityQueryArgs is SecurityQueryArgs
+    assert pmd.HistoryQueryArgs is HistoryQueryArgs
+    assert {"SecurityQueryArgs", "HistoryQueryArgs"} <= set(pmd.__all__)

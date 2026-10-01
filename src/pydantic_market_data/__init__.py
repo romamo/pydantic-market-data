@@ -17,8 +17,10 @@ from .cli_models import (
     SYMBOL,
     GlobalArgs,
     HistoryArgs,
+    HistoryQueryArgs,
     PatchedCliSettingsSource,
     SearchArgs,
+    SecurityQueryArgs,
 )
 from .interfaces import DataSource
 from .models import (
@@ -79,5 +81,7 @@ __all__ = [
     "GlobalArgs",
     "SearchArgs",
     "HistoryArgs",
+    "SecurityQueryArgs",
+    "HistoryQueryArgs",
     "PatchedCliSettingsSource",
 ]

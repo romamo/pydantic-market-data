@@ -49,7 +49,8 @@ Built on top of `pydantic-settings` `CliSettingsSource`. Contains:
 
 - **Metavar classes** (`SYMBOL`, `ISIN`, `DATE`, `PRICE`, …): bare `str`/`float`/`int` subclasses whose `__qualname__` becomes the argparse metavar in help output. They implement `__get_pydantic_core_schema__` so Pydantic still treats them as the primitive type.
 - **`GlobalArgs`**: base model with `-v` / `-vv` / `--format` / `--schema` shared across all commands.
-- **`SearchArgs` / `HistoryArgs`**: concrete command models that compose `GlobalArgs`.
+- **`SecurityQueryArgs` / `HistoryQueryArgs`**: domain-only argument models (no CLI-framework fields), for frameworks that own `-v` / `--format` / `--schema` themselves.
+- **`SearchArgs` / `HistoryArgs`**: concrete command models, `class SearchArgs(SecurityQueryArgs, GlobalArgs)`. `GlobalArgs` is listed last so its fields come first (pydantic collects fields in reverse MRO); `tests/fixtures/cli_args_v0_4_1.json` freezes their schema and help.
 - **`PatchedCliSettingsSource`**: subclasses `CliSettingsSource` to (1) strip `(default: …)` noise from help text, (2) remap `--v`/`--vv` to `-v`/`-vv` short flags, and (3) wire `--schema` to a `PrintSchemaAction` that exits after printing the JSON schema, bypassing required-argument validation.
 
 ### Public API (`__init__.py`)

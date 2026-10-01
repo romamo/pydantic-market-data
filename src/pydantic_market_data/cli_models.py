@@ -142,9 +142,14 @@ class GlobalArgs(BaseModel):
     )
 
 
-class SearchArgs(GlobalArgs):
-    """Lookup a security symbol"""
+class SecurityQueryArgs(BaseModel):
+    """Domain-only security lookup arguments, without CLI-framework options"""
 
+    model_config = SettingsConfigDict(
+        cli_kebab_case=True,
+        cli_implicit_flags="toggle",
+        cli_hide_none_type=True,
+    )
     symbol: SYMBOL | None = Field(None, description="Security symbol to search for")
     isin: ISIN | None = Field(None, description="ISIN code to search for")
     desc: NAME | None = Field(None, description="Security name or description")
@@ -157,9 +162,14 @@ class SearchArgs(GlobalArgs):
     limit: LIMIT = Field(LIMIT(1), description="Maximum number of results to return")
 
 
-class HistoryArgs(GlobalArgs):
-    """Fetch history and validate"""
+class HistoryQueryArgs(BaseModel):
+    """Domain-only history arguments, without CLI-framework options"""
 
+    model_config = SettingsConfigDict(
+        cli_kebab_case=True,
+        cli_implicit_flags="toggle",
+        cli_hide_none_type=True,
+    )
     symbol: SYMBOL | None = Field(None, description="Security symbol")
     isin: ISIN | None = Field(None, description="ISIN code")
     desc: NAME | None = Field(None, description="Security description")
@@ -169,6 +179,15 @@ class HistoryArgs(GlobalArgs):
     )
     date: DATE | None = Field(None, description="Specific date to validate price against")
     price: PRICE | None = Field(None, description="Expected price for validation")
+
+
+# GlobalArgs is listed last so its fields come first (pydantic collects fields in reverse MRO)
+class SearchArgs(SecurityQueryArgs, GlobalArgs):
+    """Lookup a security symbol"""
+
+
+class HistoryArgs(HistoryQueryArgs, GlobalArgs):
+    """Fetch history and validate"""
 
 
 class PatchedCliSettingsSource(CliSettingsSource):
