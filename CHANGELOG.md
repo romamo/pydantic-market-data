@@ -11,6 +11,7 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - `FlexibleDate` now rejects empty, `nan`, and `NaT` strings with `ValidationError`; it raised a raw `TypeError` before (#6)
+- README Python samples run against the current API: `SecurityQuery` replaces the removed `SecurityCriteria`, asset classes use lowercase `AssetClass` values (`"equity"`), and the CLI sample registers `search` as a subcommand that parses `-vv`. A new test executes every README Python block (#9)
 
 ## [0.5.0] - 2026-10-01
 
