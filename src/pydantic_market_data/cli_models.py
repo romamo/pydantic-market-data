@@ -1,3 +1,4 @@
+import inspect
 import json
 import re
 from argparse import Action, ArgumentParser
@@ -202,6 +203,10 @@ class HistoryArgs(HistoryQueryArgs, GlobalArgs):
     """Fetch history and validate"""
 
 
+# CliSettingsSource.__init__ parameters after (self, settings_cls), in positional order
+_PARENT_POSITIONAL = list(inspect.signature(CliSettingsSource.__init__).parameters)[2:]
+
+
 class PatchedCliSettingsSource(CliSettingsSource):
     """Custom CLI settings source to refine help text and flags.
 
@@ -225,12 +230,22 @@ class PatchedCliSettingsSource(CliSettingsSource):
         cli_hide_none_type: bool | None = None,
         **kwargs: Any,
     ) -> None:
-        kwargs["cli_kebab_case"] = True if cli_kebab_case is None else cli_kebab_case
-        kwargs["cli_implicit_flags"] = (
-            "toggle" if cli_implicit_flags is None else cli_implicit_flags
-        )
-        kwargs["cli_hide_none_type"] = True if cli_hide_none_type is None else cli_hide_none_type
-        super().__init__(settings_cls, *args, **kwargs)
+        positional = list(args)
+        for name, value, default in (
+            ("cli_kebab_case", cli_kebab_case, True),
+            ("cli_implicit_flags", cli_implicit_flags, "toggle"),
+            ("cli_hide_none_type", cli_hide_none_type, True),
+        ):
+            index = _PARENT_POSITIONAL.index(name)
+            if index < len(positional):
+                # Passed positionally: the parent signature still owns it
+                if positional[index] is None:
+                    positional[index] = default
+                if value is not None:
+                    kwargs[name] = value  # parent raises "multiple values", like CliSettingsSource
+            else:
+                kwargs[name] = default if value is None else value
+        super().__init__(settings_cls, *positional, **kwargs)
 
     def _help_format(
         self, field_name: str, field_info: FieldInfo, model_default: Any, is_model_suppressed: bool

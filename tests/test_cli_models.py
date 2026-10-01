@@ -450,3 +450,23 @@ def test_explicit_implicit_flags_and_hide_none_false_win(settings_first):
         )()
     )
     assert args.v is True
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_positional_args_reach_the_parent_signature(settings_first):
+    # CliSettingsSource takes cli_hide_none_type 5th and cli_implicit_flags 12th positionally
+    cli = _cli_class(SearchArgs, settings_first)
+    positional = ["tool", None, "null", False, None, None, None, None, None, None, False]
+    source = PatchedCliSettingsSource(cli, *positional)
+    assert source.cli_prog_name == "tool"
+    assert source.cli_hide_none_type is False
+    assert source.cli_implicit_flags is False
+    assert source.cli_kebab_case is True
+    assert _action(source, "--symbol").metavar == "{SYMBOL,null}"
+
+
+def test_positional_none_still_gets_the_default():
+    cli = _cli_class(SearchArgs, settings_first=False)
+    source = PatchedCliSettingsSource(cli, "tool", None, "null", None)
+    assert source.cli_hide_none_type is True
+    assert _action(source, "--symbol").metavar == "SYMBOL"
