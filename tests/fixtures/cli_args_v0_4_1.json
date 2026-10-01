@@ -493,8 +493,313 @@
       "price"
     ]
   },
-  "help": {
-    "SearchArgs": "usage: tool [-h] [-v bool] [-vv bool] [--format FORMAT] [--schema]\n            [--symbol {SYMBOL,null}] [--isin {ISIN,null}] [--desc {NAME,null}]\n            [--exchange {EXCHANGE,null}] [--currency {CURR,null}]\n            [--country {CC,null}] [--asset_class {CLASS,null}]\n            [--date {DATE,null}] [--price {PRICE,null}] [--limit LIMIT]\n\noptions:\n  -h, --help            show this help message and exit\n  -v, --verbose bool    Verbose output (INFO level)\n  -vv, --debug bool     Debug output (DEBUG level)\n  --format FORMAT       Output format (text, json, yaml)\n  --schema              Output the JSON schema of the CLI interface\n  --symbol {SYMBOL,null}\n                        Security symbol to search for\n  --isin {ISIN,null}    ISIN code to search for\n  --desc {NAME,null}    Security name or description\n  --exchange {EXCHANGE,null}\n                        Exchange code (e.g. US, L, GY)\n  --currency {CURR,null}\n                        Currency code (e.g. USD, EUR, GBP)\n  --country {CC,null}   Two-letter country code\n  --asset_class {CLASS,null}\n                        Asset class (Equity, Commodity, etc.)\n  --date {DATE,null}    Reference date for price/validation\n  --price {PRICE,null}  Reference price for validation\n  --limit LIMIT         Maximum number of results to return\n",
-    "HistoryArgs": "usage: tool [-h] [-v bool] [-vv bool] [--format FORMAT] [--schema]\n            [--symbol {SYMBOL,null}] [--isin {ISIN,null}] [--desc {NAME,null}]\n            [--exchange {EXCHANGE,null}]\n            [--period {D1,D5,MO1,MO3,MO6,Y1,Y2,Y5,Y10,YTD,MAX}]\n            [--date {DATE,null}] [--price {PRICE,null}]\n\noptions:\n  -h, --help            show this help message and exit\n  -v, --verbose bool    Verbose output (INFO level)\n  -vv, --debug bool     Debug output (DEBUG level)\n  --format FORMAT       Output format (text, json, yaml)\n  --schema              Output the JSON schema of the CLI interface\n  --symbol {SYMBOL,null}\n                        Security symbol\n  --isin {ISIN,null}    ISIN code\n  --desc {NAME,null}    Security description\n  --exchange {EXCHANGE,null}\n                        Exchange code\n  --period {D1,D5,MO1,MO3,MO6,Y1,Y2,Y5,Y10,YTD,MAX}\n                        Range of historical data (e.g. 1mo, 1y, max)\n  --date {DATE,null}    Specific date to validate price against\n  --price {PRICE,null}  Expected price for validation\n"
+  "parser": {
+    "SearchArgs": [
+      {
+        "option_strings": [
+          "-h",
+          "--help"
+        ],
+        "dest": "help",
+        "metavar": null,
+        "help": "show this help message and exit",
+        "action": "_HelpAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-v",
+          "--verbose"
+        ],
+        "dest": "v",
+        "metavar": "bool",
+        "help": "Verbose output (INFO level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-vv",
+          "--debug"
+        ],
+        "dest": "vv",
+        "metavar": "bool",
+        "help": "Debug output (DEBUG level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--format"
+        ],
+        "dest": "format",
+        "metavar": "FORMAT",
+        "help": "Output format (text, json, yaml)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--schema"
+        ],
+        "dest": "schema",
+        "metavar": "bool",
+        "help": "Output the JSON schema of the CLI interface",
+        "action": "PrintSchemaAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--symbol"
+        ],
+        "dest": "symbol",
+        "metavar": "{SYMBOL,null}",
+        "help": "Security symbol to search for",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--isin"
+        ],
+        "dest": "isin",
+        "metavar": "{ISIN,null}",
+        "help": "ISIN code to search for",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--desc"
+        ],
+        "dest": "desc",
+        "metavar": "{NAME,null}",
+        "help": "Security name or description",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--exchange"
+        ],
+        "dest": "exchange",
+        "metavar": "{EXCHANGE,null}",
+        "help": "Exchange code (e.g. US, L, GY)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--currency"
+        ],
+        "dest": "currency",
+        "metavar": "{CURR,null}",
+        "help": "Currency code (e.g. USD, EUR, GBP)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--country"
+        ],
+        "dest": "country",
+        "metavar": "{CC,null}",
+        "help": "Two-letter country code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--asset_class"
+        ],
+        "dest": "asset_class",
+        "metavar": "{CLASS,null}",
+        "help": "Asset class (Equity, Commodity, etc.)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--date"
+        ],
+        "dest": "date",
+        "metavar": "{DATE,null}",
+        "help": "Reference date for price/validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--price"
+        ],
+        "dest": "price",
+        "metavar": "{PRICE,null}",
+        "help": "Reference price for validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--limit"
+        ],
+        "dest": "limit",
+        "metavar": "LIMIT",
+        "help": "Maximum number of results to return",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      }
+    ],
+    "HistoryArgs": [
+      {
+        "option_strings": [
+          "-h",
+          "--help"
+        ],
+        "dest": "help",
+        "metavar": null,
+        "help": "show this help message and exit",
+        "action": "_HelpAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-v",
+          "--verbose"
+        ],
+        "dest": "v",
+        "metavar": "bool",
+        "help": "Verbose output (INFO level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "-vv",
+          "--debug"
+        ],
+        "dest": "vv",
+        "metavar": "bool",
+        "help": "Debug output (DEBUG level)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--format"
+        ],
+        "dest": "format",
+        "metavar": "FORMAT",
+        "help": "Output format (text, json, yaml)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--schema"
+        ],
+        "dest": "schema",
+        "metavar": "bool",
+        "help": "Output the JSON schema of the CLI interface",
+        "action": "PrintSchemaAction",
+        "nargs": 0,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--symbol"
+        ],
+        "dest": "symbol",
+        "metavar": "{SYMBOL,null}",
+        "help": "Security symbol",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--isin"
+        ],
+        "dest": "isin",
+        "metavar": "{ISIN,null}",
+        "help": "ISIN code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--desc"
+        ],
+        "dest": "desc",
+        "metavar": "{NAME,null}",
+        "help": "Security description",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--exchange"
+        ],
+        "dest": "exchange",
+        "metavar": "{EXCHANGE,null}",
+        "help": "Exchange code",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--period"
+        ],
+        "dest": "period",
+        "metavar": "{D1,D5,MO1,MO3,MO6,Y1,Y2,Y5,Y10,YTD,MAX}",
+        "help": "Range of historical data (e.g. 1mo, 1y, max)",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--date"
+        ],
+        "dest": "date",
+        "metavar": "{DATE,null}",
+        "help": "Specific date to validate price against",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      },
+      {
+        "option_strings": [
+          "--price"
+        ],
+        "dest": "price",
+        "metavar": "{PRICE,null}",
+        "help": "Expected price for validation",
+        "action": "_StoreAction",
+        "nargs": null,
+        "default_suppressed": true
+      }
+    ]
   }
 }

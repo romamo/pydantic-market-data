@@ -1,12 +1,11 @@
-import io
+import argparse
 import json
-from contextlib import redirect_stdout
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import TypeAdapter
-from pydantic_settings import BaseSettings, CliApp
+from pydantic_settings import BaseSettings
 
 import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
@@ -176,20 +175,29 @@ def _frozen() -> dict:
     return json.loads(_FIXTURE.read_text())
 
 
-def _cli_help(model: type) -> str:
+def _cli_parser_structure(model: type) -> list[dict]:
+    """The argparse actions a PatchedCliSettingsSource CLI over `model` registers, in order.
+
+    Compared structurally because rendered --help differs across Python versions
+    ("-v, --verbose bool" on 3.13+, "-v bool, --verbose bool" on 3.10) and terminal widths.
+    """
+
     class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
         pass
 
-    buf = io.StringIO()
-    with redirect_stdout(buf), pytest.raises(SystemExit):
-        source = PatchedCliSettingsSource(Cli, cli_prog_name="tool")
-        CliApp.run(Cli, cli_args=["--help"], cli_settings_source=source)
-    return buf.getvalue()
-
-
-def _squash(text: str) -> str:
-    # argparse wraps to the terminal width; compare content, not layout
-    return " ".join(text.split())
+    parser = PatchedCliSettingsSource(Cli, cli_prog_name="tool").root_parser
+    return [
+        {
+            "option_strings": list(action.option_strings),
+            "dest": action.dest,
+            "metavar": action.metavar,
+            "help": action.help,
+            "action": type(action).__name__,
+            "nargs": action.nargs,
+            "default_suppressed": action.default == argparse.SUPPRESS,
+        }
+        for action in parser._actions
+    ]
 
 
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
@@ -202,11 +210,14 @@ def test_cli_args_schema_unchanged_since_v0_4_1(model):
 
 
 @pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
-def test_cli_args_help_unchanged_since_v0_4_1(model):
-    help_text = _cli_help(model)
-    assert _squash(help_text) == _squash(_frozen()["help"][model.__name__])
-    for flag in ("-v, --verbose", "-vv, --debug", "--format FORMAT", "--schema"):
-        assert flag in help_text
+def test_cli_args_parser_unchanged_since_v0_4_1(model):
+    structure = _cli_parser_structure(model)
+    assert structure == _frozen()["parser"][model.__name__]
+    option_strings = [action["option_strings"] for action in structure]
+    for flags in (["-v", "--verbose"], ["-vv", "--debug"], ["--format"], ["--schema"]):
+        assert flags in option_strings
+    schema_action = next(a for a in structure if a["option_strings"] == ["--schema"])
+    assert schema_action["action"] == "PrintSchemaAction"
 
 
 @pytest.mark.parametrize(
@@ -225,11 +236,11 @@ def test_query_args_are_domain_only(query_model, cli_model):
     assert query_model.model_config == cli_model.model_config
 
 
-def test_query_args_help_has_no_framework_flags():
-    help_text = _cli_help(SecurityQueryArgs)
-    assert "--symbol" in help_text
-    for flag in ("--verbose", "--debug", "--format", "--schema"):
-        assert flag not in help_text
+@pytest.mark.parametrize("model", [SecurityQueryArgs, HistoryQueryArgs])
+def test_query_args_cli_has_no_framework_flags(model):
+    flags = {f for action in _cli_parser_structure(model) for f in action["option_strings"]}
+    assert "--symbol" in flags
+    assert flags.isdisjoint({"-v", "--verbose", "-vv", "--debug", "--format", "--schema"})
 
 
 def test_query_args_exported_from_package():
