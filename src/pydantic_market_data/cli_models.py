@@ -205,10 +205,15 @@ class HistoryArgs(HistoryQueryArgs, GlobalArgs):
 class PatchedCliSettingsSource(CliSettingsSource):
     """Custom CLI settings source to refine help text and flags.
 
-    Defaults `cli_kebab_case` to True (`--asset-class`, not `--asset_class`). Pydantic merges
-    `model_config` along the MRO, so `class Cli(SearchArgs, BaseSettings)` picks up
-    BaseSettings' explicit `cli_kebab_case=False` and the models' own setting is lost.
-    Pass `cli_kebab_case=False` (or `"all"` / `"no_enums"`) to override.
+    Defaults three settings the arg models declare in their `model_config`, because pydantic
+    merges `model_config` along the MRO: `class Cli(SearchArgs, BaseSettings)` picks up
+    BaseSettings' explicit defaults and the models' own settings are lost.
+
+    - `cli_kebab_case=True`: `--asset-class`, not `--asset_class`
+    - `cli_implicit_flags="toggle"`: `-v` is a valueless flag, not `-v bool`
+    - `cli_hide_none_type=True`: `--symbol SYMBOL`, not `--symbol {SYMBOL,null}`
+
+    Pass any of them explicitly to override.
     """
 
     def __init__(
@@ -216,9 +221,15 @@ class PatchedCliSettingsSource(CliSettingsSource):
         settings_cls: type[BaseSettings],
         *args: Any,
         cli_kebab_case: bool | Literal["all", "no_enums"] | None = None,
+        cli_implicit_flags: bool | Literal["dual", "toggle"] | None = None,
+        cli_hide_none_type: bool | None = None,
         **kwargs: Any,
     ) -> None:
         kwargs["cli_kebab_case"] = True if cli_kebab_case is None else cli_kebab_case
+        kwargs["cli_implicit_flags"] = (
+            "toggle" if cli_implicit_flags is None else cli_implicit_flags
+        )
+        kwargs["cli_hide_none_type"] = True if cli_hide_none_type is None else cli_hide_none_type
         super().__init__(settings_cls, *args, **kwargs)
 
     def _help_format(

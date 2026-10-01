@@ -96,7 +96,7 @@ Key CLI features:
 - **Clean Help**: Automatically removes default values from help text for a cleaner look.
 - **Improved Flags**: Normalizes double-dash flags like `--vv` to `-vv`.
 - **JSON Schema**: Adds a `--schema` flag to output the interface definition.
-- **Kebab-case Flags**: Multi-word fields become `--asset-class`, whatever order your `BaseSettings` subclass lists its bases in; pass `cli_kebab_case=False` to the source to keep `--asset_class`.
+- **Consistent Defaults**: Whatever order your `BaseSettings` subclass lists its bases in, multi-word fields become `--asset-class`, `-v`/`-vv` are valueless flags, and optional values show as `--symbol SYMBOL` (not `{SYMBOL,null}`). Pass `cli_kebab_case`, `cli_implicit_flags` or `cli_hide_none_type` to the source to override.
 - **Metavars**: Custom types (`SYMBOL`, `ISIN`, etc.) provide descriptive help labels.
 
 `SearchArgs` and `HistoryArgs` are `SecurityQueryArgs` and `HistoryQueryArgs` plus `GlobalArgs` (`-v`, `-vv`, `--format`, `--schema`). `SearchArgs` also adds `--limit`, a paging option that list-command frameworks are expected to own. If your CLI framework already owns those options, use the domain-only `*QueryArgs` models instead:

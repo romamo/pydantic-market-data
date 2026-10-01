@@ -389,9 +389,64 @@ def test_cli_parses_kebab_asset_class_end_to_end(settings_first):
     assert args.asset_class is AssetClass.EQUITY
 
 
-def test_schema_flag_prints_and_exits_with_kebab_default(capsys):
-    cli = _cli_class(SearchArgs, settings_first=False)
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_schema_flag_prints_and_exits(capsys, settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
     with pytest.raises(SystemExit) as exc:
         PatchedCliSettingsSource(cli, cli_parse_args=["--schema"])
     assert exc.value.code == 0
     assert "asset_class" in json.loads(capsys.readouterr().out)["properties"]
+
+
+# --- Issue #13: toggle bool flags and hidden None type by default -------------------------
+
+
+def _action(source: PatchedCliSettingsSource, flag: str) -> argparse.Action:
+    return next(a for a in source.root_parser._actions if flag in a.option_strings)
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_patched_source_defaults_toggle_flags_and_hidden_none(model, settings_first):
+    cli = _cli_class(model, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool")
+    assert source.cli_implicit_flags == "toggle"
+    assert source.cli_hide_none_type is True
+    assert _action(source, "--symbol").metavar == "SYMBOL"
+    assert "--symbol SYMBOL" in source.root_parser.format_help()
+    assert not [f for f in _option_strings(source) if f.startswith("--no-")]
+    for flag, long_flag in (("-v", "--verbose"), ("-vv", "--debug")):
+        action = _action(source, flag)
+        assert action.option_strings == [flag, long_flag]
+        assert action.nargs == 0
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+@pytest.mark.parametrize("argv", [["-v", "-vv"], ["--verbose", "--debug"]])
+def test_verbosity_flags_parse_without_value(model, settings_first, argv):
+    cli = _cli_class(model, settings_first)
+    args = cli.model_validate(
+        PatchedCliSettingsSource(cli, cli_parse_args=[*argv, "--symbol", "AAPL"])()
+    )
+    assert args.v is True
+    assert args.vv is True
+    assert args.symbol == "AAPL"
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_explicit_implicit_flags_and_hide_none_false_win(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    source = PatchedCliSettingsSource(
+        cli, cli_prog_name="tool", cli_implicit_flags=False, cli_hide_none_type=False
+    )
+    assert _action(source, "--symbol").metavar == "{SYMBOL,null}"
+    verbose = _action(source, "-v")
+    assert verbose.metavar == "bool"
+    assert verbose.nargs is None
+    args = cli.model_validate(
+        PatchedCliSettingsSource(
+            cli, cli_parse_args=["-v", "true"], cli_implicit_flags=False, cli_hide_none_type=False
+        )()
+    )
+    assert args.v is True

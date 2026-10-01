@@ -532,10 +532,10 @@
           "--verbose"
         ],
         "dest": "v",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Verbose output (INFO level)",
-        "action": "_StoreAction",
-        "nargs": null,
+        "action": "_StoreTrueAction",
+        "nargs": 0,
         "default_suppressed": true
       },
       {
@@ -544,10 +544,10 @@
           "--debug"
         ],
         "dest": "vv",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Debug output (DEBUG level)",
-        "action": "_StoreAction",
-        "nargs": null,
+        "action": "_StoreTrueAction",
+        "nargs": 0,
         "default_suppressed": true
       },
       {
@@ -566,7 +566,7 @@
           "--schema"
         ],
         "dest": "schema",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Output the JSON schema of the CLI interface",
         "action": "PrintSchemaAction",
         "nargs": 0,
@@ -577,7 +577,7 @@
           "--symbol"
         ],
         "dest": "symbol",
-        "metavar": "{SYMBOL,null}",
+        "metavar": "SYMBOL",
         "help": "Security symbol to search for",
         "action": "_StoreAction",
         "nargs": null,
@@ -588,7 +588,7 @@
           "--isin"
         ],
         "dest": "isin",
-        "metavar": "{ISIN,null}",
+        "metavar": "ISIN",
         "help": "ISIN code to search for",
         "action": "_StoreAction",
         "nargs": null,
@@ -599,7 +599,7 @@
           "--desc"
         ],
         "dest": "desc",
-        "metavar": "{NAME,null}",
+        "metavar": "NAME",
         "help": "Security name or description",
         "action": "_StoreAction",
         "nargs": null,
@@ -610,7 +610,7 @@
           "--exchange"
         ],
         "dest": "exchange",
-        "metavar": "{EXCHANGE,null}",
+        "metavar": "EXCHANGE",
         "help": "Exchange code (e.g. US, L, GY)",
         "action": "_StoreAction",
         "nargs": null,
@@ -621,7 +621,7 @@
           "--currency"
         ],
         "dest": "currency",
-        "metavar": "{CURR,null}",
+        "metavar": "CURR",
         "help": "Currency code (e.g. USD, EUR, GBP)",
         "action": "_StoreAction",
         "nargs": null,
@@ -632,7 +632,7 @@
           "--country"
         ],
         "dest": "country",
-        "metavar": "{CC,null}",
+        "metavar": "CC",
         "help": "Two-letter country code",
         "action": "_StoreAction",
         "nargs": null,
@@ -643,7 +643,7 @@
           "--asset-class"
         ],
         "dest": "asset_class",
-        "metavar": "{{EQUITY,FIXED_INCOME,CASH,COMMODITY,REAL_ESTATE,FX,CRYPTO,DERIVATIVE,ALTERNATIVE,INDEX},null}",
+        "metavar": "{EQUITY,FIXED_INCOME,CASH,COMMODITY,REAL_ESTATE,FX,CRYPTO,DERIVATIVE,ALTERNATIVE,INDEX}",
         "help": "Asset class (equity, commodity, etc.)",
         "action": "_StoreAction",
         "nargs": null,
@@ -654,7 +654,7 @@
           "--date"
         ],
         "dest": "date",
-        "metavar": "{date,null}",
+        "metavar": "date",
         "help": "Reference date for price/validation",
         "action": "_StoreAction",
         "nargs": null,
@@ -665,7 +665,7 @@
           "--price"
         ],
         "dest": "price",
-        "metavar": "{PRICE,null}",
+        "metavar": "PRICE",
         "help": "Reference price for validation",
         "action": "_StoreAction",
         "nargs": null,
@@ -702,10 +702,10 @@
           "--verbose"
         ],
         "dest": "v",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Verbose output (INFO level)",
-        "action": "_StoreAction",
-        "nargs": null,
+        "action": "_StoreTrueAction",
+        "nargs": 0,
         "default_suppressed": true
       },
       {
@@ -714,10 +714,10 @@
           "--debug"
         ],
         "dest": "vv",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Debug output (DEBUG level)",
-        "action": "_StoreAction",
-        "nargs": null,
+        "action": "_StoreTrueAction",
+        "nargs": 0,
         "default_suppressed": true
       },
       {
@@ -736,7 +736,7 @@
           "--schema"
         ],
         "dest": "schema",
-        "metavar": "bool",
+        "metavar": null,
         "help": "Output the JSON schema of the CLI interface",
         "action": "PrintSchemaAction",
         "nargs": 0,
@@ -747,7 +747,7 @@
           "--symbol"
         ],
         "dest": "symbol",
-        "metavar": "{SYMBOL,null}",
+        "metavar": "SYMBOL",
         "help": "Security symbol",
         "action": "_StoreAction",
         "nargs": null,
@@ -758,7 +758,7 @@
           "--isin"
         ],
         "dest": "isin",
-        "metavar": "{ISIN,null}",
+        "metavar": "ISIN",
         "help": "ISIN code",
         "action": "_StoreAction",
         "nargs": null,
@@ -769,7 +769,7 @@
           "--desc"
         ],
         "dest": "desc",
-        "metavar": "{NAME,null}",
+        "metavar": "NAME",
         "help": "Security description",
         "action": "_StoreAction",
         "nargs": null,
@@ -780,7 +780,7 @@
           "--exchange"
         ],
         "dest": "exchange",
-        "metavar": "{EXCHANGE,null}",
+        "metavar": "EXCHANGE",
         "help": "Exchange code",
         "action": "_StoreAction",
         "nargs": null,
@@ -802,7 +802,7 @@
           "--date"
         ],
         "dest": "date",
-        "metavar": "{date,null}",
+        "metavar": "date",
         "help": "Specific date to validate price against",
         "action": "_StoreAction",
         "nargs": null,
@@ -813,7 +813,7 @@
           "--price"
         ],
         "dest": "price",
-        "metavar": "{PRICE,null}",
+        "metavar": "PRICE",
         "help": "Expected price for validation",
         "action": "_StoreAction",
         "nargs": null,
