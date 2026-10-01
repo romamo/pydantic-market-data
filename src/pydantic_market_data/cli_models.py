@@ -1,13 +1,14 @@
+import inspect
 import json
 import re
 from argparse import Action, ArgumentParser
 from collections.abc import Callable
-from typing import Annotated, Any, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias
 
 from pydantic import BaseModel, BeforeValidator, Field, GetCoreSchemaHandler
 from pydantic.fields import FieldInfo
 from pydantic_core import core_schema
-from pydantic_settings import CliSettingsSource, SettingsConfigDict
+from pydantic_settings import BaseSettings, CliSettingsSource, SettingsConfigDict
 
 from .models import AssetClass, Currency, FlexibleDate, HistoryPeriod
 
@@ -202,8 +203,49 @@ class HistoryArgs(HistoryQueryArgs, GlobalArgs):
     """Fetch history and validate"""
 
 
+# CliSettingsSource.__init__ parameters after (self, settings_cls), in positional order
+_PARENT_POSITIONAL = list(inspect.signature(CliSettingsSource.__init__).parameters)[2:]
+
+
 class PatchedCliSettingsSource(CliSettingsSource):
-    """Custom CLI settings source to refine help text and flags."""
+    """Custom CLI settings source to refine help text and flags.
+
+    Defaults three settings the arg models declare in their `model_config`, because pydantic
+    merges `model_config` along the MRO: `class Cli(SearchArgs, BaseSettings)` picks up
+    BaseSettings' explicit defaults and the models' own settings are lost.
+
+    - `cli_kebab_case=True`: `--asset-class`, not `--asset_class`
+    - `cli_implicit_flags="toggle"`: `-v` is a valueless flag, not `-v bool`
+    - `cli_hide_none_type=True`: `--symbol SYMBOL`, not `--symbol {SYMBOL,null}`
+
+    Pass any of them explicitly to override.
+    """
+
+    def __init__(
+        self,
+        settings_cls: type[BaseSettings],
+        *args: Any,
+        cli_kebab_case: bool | Literal["all", "no_enums"] | None = None,
+        cli_implicit_flags: bool | Literal["dual", "toggle"] | None = None,
+        cli_hide_none_type: bool | None = None,
+        **kwargs: Any,
+    ) -> None:
+        positional = list(args)
+        for name, value, default in (
+            ("cli_kebab_case", cli_kebab_case, True),
+            ("cli_implicit_flags", cli_implicit_flags, "toggle"),
+            ("cli_hide_none_type", cli_hide_none_type, True),
+        ):
+            index = _PARENT_POSITIONAL.index(name)
+            if index < len(positional):
+                # Passed positionally: the parent signature still owns it
+                if positional[index] is None:
+                    positional[index] = default
+                if value is not None:
+                    kwargs[name] = value  # parent raises "multiple values", like CliSettingsSource
+            else:
+                kwargs[name] = default if value is None else value
+        super().__init__(settings_cls, *positional, **kwargs)
 
     def _help_format(
         self, field_name: str, field_info: FieldInfo, model_default: Any, is_model_suppressed: bool

@@ -6,7 +6,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from pydantic import TypeAdapter, ValidationError
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings
 
 import pydantic_market_data as pmd
 from pydantic_market_data.cli_models import (
@@ -316,7 +316,7 @@ def test_date_rejects_invalid(model):
 @pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
 def test_cli_parses_typed_asset_class_and_date(model):
     class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
-        model_config = SettingsConfigDict(cli_kebab_case=True)
+        pass
 
     argv = ["--asset-class", "Equity", "--date", "2024/01/15"]
     args = Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
@@ -330,3 +330,143 @@ def test_date_rejects_empty_and_nat_with_validation_error(model, raw):
     # pd.to_datetime returns NaT for these; NaT.date() raised a raw TypeError
     with pytest.raises(ValidationError, match="Invalid date"):
         model(date=raw)
+
+
+# --- Issue #10: kebab-case flags by default -----------------------------------------------
+
+
+def _cli_class(model: type, settings_first: bool) -> type[BaseSettings]:
+    if settings_first:
+
+        class CliSettingsFirst(BaseSettings, model):  # type: ignore[misc, valid-type]
+            pass
+
+        return CliSettingsFirst
+
+    class CliModelFirst(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    return CliModelFirst
+
+
+def _option_strings(source: PatchedCliSettingsSource) -> list[str]:
+    return [flag for action in source.root_parser._actions for flag in action.option_strings]
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs, SecurityQueryArgs, HistoryQueryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_patched_source_defaults_to_kebab_case(model, settings_first):
+    cli = _cli_class(model, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool")
+    assert source.cli_kebab_case is True
+    flags = _option_strings(source)
+    assert "--symbol" in flags
+    assert not [flag for flag in flags if "_" in flag]
+    if "asset_class" in model.model_fields:
+        assert "--asset-class" in flags
+
+
+def test_model_first_cli_config_is_not_kebab():
+    # Root cause of #10: BaseSettings' explicit cli_kebab_case=False wins the MRO config merge
+    assert _cli_class(SearchArgs, settings_first=False).model_config["cli_kebab_case"] is False
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_explicit_kebab_case_false_wins(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool", cli_kebab_case=False)
+    assert source.cli_kebab_case is False
+    flags = _option_strings(source)
+    assert "--asset_class" in flags
+    assert "--asset-class" not in flags
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_cli_parses_kebab_asset_class_end_to_end(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    argv = ["--asset-class", "equity"]
+    args = cli.model_validate(PatchedCliSettingsSource(cli, cli_parse_args=argv)())
+    assert args.asset_class is AssetClass.EQUITY
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_schema_flag_prints_and_exits(capsys, settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    with pytest.raises(SystemExit) as exc:
+        PatchedCliSettingsSource(cli, cli_parse_args=["--schema"])
+    assert exc.value.code == 0
+    assert "asset_class" in json.loads(capsys.readouterr().out)["properties"]
+
+
+# --- Issue #13: toggle bool flags and hidden None type by default -------------------------
+
+
+def _action(source: PatchedCliSettingsSource, flag: str) -> argparse.Action:
+    return next(a for a in source.root_parser._actions if flag in a.option_strings)
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_patched_source_defaults_toggle_flags_and_hidden_none(model, settings_first):
+    cli = _cli_class(model, settings_first)
+    source = PatchedCliSettingsSource(cli, cli_prog_name="tool")
+    assert source.cli_implicit_flags == "toggle"
+    assert source.cli_hide_none_type is True
+    assert _action(source, "--symbol").metavar == "SYMBOL"
+    assert "--symbol SYMBOL" in source.root_parser.format_help()
+    assert not [f for f in _option_strings(source) if f.startswith("--no-")]
+    for flag, long_flag in (("-v", "--verbose"), ("-vv", "--debug")):
+        action = _action(source, flag)
+        assert action.option_strings == [flag, long_flag]
+        assert action.nargs == 0
+
+
+@pytest.mark.parametrize("model", [SearchArgs, HistoryArgs])
+@pytest.mark.parametrize("settings_first", [False, True])
+@pytest.mark.parametrize("argv", [["-v", "-vv"], ["--verbose", "--debug"]])
+def test_verbosity_flags_parse_without_value(model, settings_first, argv):
+    cli = _cli_class(model, settings_first)
+    args = cli.model_validate(
+        PatchedCliSettingsSource(cli, cli_parse_args=[*argv, "--symbol", "AAPL"])()
+    )
+    assert args.v is True
+    assert args.vv is True
+    assert args.symbol == "AAPL"
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_explicit_implicit_flags_and_hide_none_false_win(settings_first):
+    cli = _cli_class(SearchArgs, settings_first)
+    source = PatchedCliSettingsSource(
+        cli, cli_prog_name="tool", cli_implicit_flags=False, cli_hide_none_type=False
+    )
+    assert _action(source, "--symbol").metavar == "{SYMBOL,null}"
+    verbose = _action(source, "-v")
+    assert verbose.metavar == "bool"
+    assert verbose.nargs is None
+    args = cli.model_validate(
+        PatchedCliSettingsSource(
+            cli, cli_parse_args=["-v", "true"], cli_implicit_flags=False, cli_hide_none_type=False
+        )()
+    )
+    assert args.v is True
+
+
+@pytest.mark.parametrize("settings_first", [False, True])
+def test_positional_args_reach_the_parent_signature(settings_first):
+    # CliSettingsSource takes cli_hide_none_type 5th and cli_implicit_flags 12th positionally
+    cli = _cli_class(SearchArgs, settings_first)
+    positional = ["tool", None, "null", False, None, None, None, None, None, None, False]
+    source = PatchedCliSettingsSource(cli, *positional)
+    assert source.cli_prog_name == "tool"
+    assert source.cli_hide_none_type is False
+    assert source.cli_implicit_flags is False
+    assert source.cli_kebab_case is True
+    assert _action(source, "--symbol").metavar == "{SYMBOL,null}"
+
+
+def test_positional_none_still_gets_the_default():
+    cli = _cli_class(SearchArgs, settings_first=False)
+    source = PatchedCliSettingsSource(cli, "tool", None, "null", None)
+    assert source.cli_hide_none_type is True
+    assert _action(source, "--symbol").metavar == "SYMBOL"
