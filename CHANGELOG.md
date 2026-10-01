@@ -2,6 +2,11 @@
 
 All notable changes to this project will be documented in this file.
 
+## [Unreleased]
+
+### Changed (Breaking)
+- `SecurityQueryArgs` no longer has a `limit` field (`--limit`): it is a paging option, not a domain field, and clashed with the `--limit` that list-command frameworks register themselves. `limit` is now declared on `SearchArgs`, whose fields, JSON schema, and CLI help are unchanged; code that read `limit` from a `SecurityQueryArgs` subclass must declare it itself (#5)
+
 ## [0.5.0] - 2026-10-01
 
 ### Added

@@ -221,15 +221,16 @@ def test_cli_args_parser_unchanged_since_v0_4_1(model):
 
 
 @pytest.mark.parametrize(
-    ("query_model", "cli_model"),
-    [(SecurityQueryArgs, SearchArgs), (HistoryQueryArgs, HistoryArgs)],
+    ("query_model", "cli_model", "cli_extra"),
+    [(SecurityQueryArgs, SearchArgs, ["limit"]), (HistoryQueryArgs, HistoryArgs, [])],
 )
-def test_query_args_are_domain_only(query_model, cli_model):
+def test_query_args_are_domain_only(query_model, cli_model, cli_extra):
     schema = query_model.model_json_schema()
     assert _CLI_ONLY_KEYS.isdisjoint(schema["properties"])
     assert _CLI_ONLY_KEYS.isdisjoint(query_model.model_fields)
     # Same domain fields, in the same order, as the CLI model minus the GlobalArgs fields
-    assert list(query_model.model_fields) == list(cli_model.model_fields)[4:]
+    # and the CLI model's own trailing options
+    assert list(query_model.model_fields) + cli_extra == list(cli_model.model_fields)[4:]
     assert issubclass(cli_model, query_model)
     assert issubclass(cli_model, GlobalArgs)
     assert not issubclass(query_model, GlobalArgs)
@@ -241,6 +242,22 @@ def test_query_args_cli_has_no_framework_flags(model):
     flags = {f for action in _cli_parser_structure(model) for f in action["option_strings"]}
     assert "--symbol" in flags
     assert flags.isdisjoint({"-v", "--verbose", "-vv", "--debug", "--format", "--schema"})
+
+
+def test_security_query_args_has_no_limit():
+    # --limit is a paging option owned by list-command frameworks (#5)
+    assert "limit" not in SecurityQueryArgs.model_fields
+    assert "limit" not in SecurityQueryArgs.model_json_schema()["properties"]
+    flags = {f for a in _cli_parser_structure(SecurityQueryArgs) for f in a["option_strings"]}
+    assert "--limit" not in flags
+
+
+def test_search_args_keeps_limit_last():
+    assert list(SearchArgs.model_fields)[-1] == "limit"
+    assert SearchArgs.model_fields["limit"].default == 1
+    flags = [a["option_strings"] for a in _cli_parser_structure(SearchArgs)]
+    assert flags[-1] == ["--limit"]
+    assert SearchArgs.model_validate({"limit": 5}).limit == 5
 
 
 def test_query_args_exported_from_package():

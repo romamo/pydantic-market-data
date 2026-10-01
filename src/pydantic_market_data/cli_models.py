@@ -159,7 +159,6 @@ class SecurityQueryArgs(BaseModel):
     asset_class: CLASS | None = Field(None, description="Asset class (Equity, Commodity, etc.)")
     date: DATE | None = Field(None, description="Reference date for price/validation")
     price: PRICE | None = Field(None, description="Reference price for validation")
-    limit: LIMIT = Field(LIMIT(1), description="Maximum number of results to return")
 
 
 class HistoryQueryArgs(BaseModel):
@@ -184,6 +183,9 @@ class HistoryQueryArgs(BaseModel):
 # GlobalArgs is listed last so its fields come first (pydantic collects fields in reverse MRO)
 class SearchArgs(SecurityQueryArgs, GlobalArgs):
     """Lookup a security symbol"""
+
+    # Paging option, not a domain field: frameworks that own --limit use SecurityQueryArgs
+    limit: LIMIT = Field(LIMIT(1), description="Maximum number of results to return")
 
 
 class HistoryArgs(HistoryQueryArgs, GlobalArgs):
