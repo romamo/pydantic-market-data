@@ -322,3 +322,11 @@ def test_cli_parses_typed_asset_class_and_date(model):
     args = Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
     assert args.asset_class is AssetClass.EQUITY
     assert args.date == date(2024, 1, 15)
+
+
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+@pytest.mark.parametrize("raw", ["", "nan", "NaT"])
+def test_date_rejects_empty_and_nat_with_validation_error(model, raw):
+    # pd.to_datetime returns NaT for these; NaT.date() raised a raw TypeError
+    with pytest.raises(ValidationError, match="Invalid date"):
+        model(date=raw)
