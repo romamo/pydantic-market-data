@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.8.0] - 2026-10-02
 
 ### Added
 - Minor-unit quote currencies: `CurrencyCode` (so `Security.currency`, `SecurityQuery.currency`, and `--currency` / `currency` on `SecurityQueryArgs` and `SearchArgs`) accepts `GBX` (pence), `ZAC` (South African cents) and `ILA` (agorot) besides ISO 4217 codes, case-insensitively, plus the exact mixed-case `GBp` and `ZAc`, stored as `GBX` and `ZAC`. The JSON schema enum of `CurrencyCode` and of the `currency` CLI argument gains `GBX`, `ILA` and `ZAC`, in sorted position; nothing else in the schema changes. `ZAX` and other codes are still rejected (#25)
