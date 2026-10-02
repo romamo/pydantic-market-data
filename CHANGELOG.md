@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.7.0] - 2026-10-02
 
 ### Changed (Breaking)
 - `FlexibleDate` (and `parse_date`) now accepts only the strings `YYYY-MM-DD`, `YYYY/MM/DD` and `YYYYMMDD` (one separator, used twice), besides `date` and `datetime` objects; every other string raises `ValidationError` naming the accepted formats. Before, `pd.to_datetime` read ambiguous dates month-first (`01/02/2025` became 2025-01-02 silently, `15/01/2025` and `15.01.2025` parsed with a pandas warning on stderr) and accepted shapes such as `Jan 15 2025` and `2024-01-15T10:00:00`. Impossible dates such as `2024-02-30` are still rejected. This affects `PriceOnDate.date`, `SecurityQuery.price_on`, and `date` on `SecurityQueryArgs`, `HistoryQueryArgs`, `SearchArgs` and `HistoryArgs`; `PriceVerificationError(actual_date=...)` raises `ValueError` for the rejected strings. `FlexibleDatetime` is unchanged (#18)
