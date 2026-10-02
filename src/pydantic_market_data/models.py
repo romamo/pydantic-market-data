@@ -194,6 +194,25 @@ class StrictDate(RootModel[date]):
         return str(self.root)
 
 
+def _isin_root(v: Any) -> Any:
+    """Validate and normalize an ``ISIN`` root; placeholders cannot become a VO."""
+    if not isinstance(v, str):
+        return v
+    isin = validate_isin(v)
+    if isin is None:
+        raise ValueError(f"ISIN must not be empty or a placeholder: {v!r}")
+    return isin
+
+
+def _isin_field(v: Any) -> Any:
+    """``ISIN.Input`` coercion: unwrap an ``ISIN``, validate a str, map placeholders to None."""
+    if isinstance(v, ISIN):
+        return v.root
+    if isinstance(v, str):
+        return validate_isin(v)
+    return v
+
+
 class ISIN(RootModel[str]):
     """
     Strict Value Object for ISIN identifiers.
@@ -202,7 +221,10 @@ class ISIN(RootModel[str]):
     if TYPE_CHECKING:
         Input: TypeAlias = "ISIN" | str | None  # type: ignore[misc]
     else:
-        Input: ClassVar[Any] = Annotated["ISIN | str | None", BeforeValidator(validate_isin)]
+        Input: ClassVar[Any] = Annotated["ISIN | str | None", BeforeValidator(_isin_field)]
+
+    # The root is stripped, upper-cased and checked for format and Luhn checksum.
+    _validate_root = field_validator("root", mode="before")(_isin_root)
 
     @property
     def value(self) -> str:
@@ -210,6 +232,25 @@ class ISIN(RootModel[str]):
 
     def __str__(self) -> str:
         return self.root
+
+
+def _figi_root(v: Any) -> Any:
+    """Validate and normalize a ``FIGI`` root; an empty value cannot become a VO."""
+    if not isinstance(v, str):
+        return v
+    figi = validate_figi(v)
+    if figi is None:
+        raise ValueError(f"FIGI must not be empty: {v!r}")
+    return figi
+
+
+def _figi_field(v: Any) -> Any:
+    """``FIGI.Input`` coercion: unwrap a ``FIGI``, validate a str, map empty to None."""
+    if isinstance(v, FIGI):
+        return v.root
+    if isinstance(v, str):
+        return validate_figi(v)
+    return v
 
 
 class FIGI(RootModel[str]):
@@ -220,7 +261,10 @@ class FIGI(RootModel[str]):
     if TYPE_CHECKING:
         Input: TypeAlias = "FIGI" | str | None  # type: ignore[misc]
     else:
-        Input: ClassVar[Any] = Annotated["FIGI | str | None", BeforeValidator(validate_figi)]
+        Input: ClassVar[Any] = Annotated["FIGI | str | None", BeforeValidator(_figi_field)]
+
+    # The root is stripped, upper-cased and checked for format, prefix and check digit.
+    _validate_root = field_validator("root", mode="before")(_figi_root)
 
     @property
     def value(self) -> str:
