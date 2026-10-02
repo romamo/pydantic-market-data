@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.9.0] - 2026-10-02
 
 ### Changed (Breaking)
 - `pydantic_market_data.ISIN` is now the `ISIN` value object from `pydantic_market_data.models`, matching `FIGI`: `ISIN("NOTANISIN123")` raises `ValidationError`. It used to be the CLI metavar, a plain `str` subclass with no validation. The metavar stays importable as `pydantic_market_data.cli_models.ISIN`, so `--isin ISIN` help, `SecurityQueryArgs`/`SearchArgs` and their JSON schema are unchanged (#28)
