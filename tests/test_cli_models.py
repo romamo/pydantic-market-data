@@ -299,6 +299,17 @@ def test_asset_class_is_case_insensitive(raw):
     assert SecurityQueryArgs(asset_class=raw).asset_class is AssetClass.EQUITY
 
 
+@pytest.mark.parametrize("model", [SecurityQueryArgs, SearchArgs])
+def test_asset_class_contract_schema_lowercase_python_any_case(model):
+    # Issue #19: the schema advertises lowercase values only (schema-driven CLIs reject
+    # "Equity"), while model_validate still folds case for Python callers
+    enum = model.model_json_schema()["$defs"]["AssetClass"]["enum"]
+    assert enum == [c.value for c in AssetClass]
+    assert all(value == value.lower() for value in enum)
+    for raw in ("equity", "Equity", "EQUITY"):
+        assert model.model_validate({"asset_class": raw}).asset_class is AssetClass.EQUITY
+
+
 @pytest.mark.parametrize("raw", ["stock", "", 1])
 def test_asset_class_rejects_unknown(raw):
     with pytest.raises(ValidationError):

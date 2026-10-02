@@ -17,7 +17,9 @@ def _lower_str(v: Any) -> Any:
     return v.lower() if isinstance(v, str) else v
 
 
-# AssetClass that accepts any letter case on input ("Equity", "EQUITY" -> AssetClass.EQUITY)
+# AssetClass that accepts any letter case from Python callers ("Equity", "EQUITY" ->
+# AssetClass.EQUITY). The JSON schema keeps the lowercase AssetClass enum, so schema-driven
+# CLIs that validate against it accept lowercase values only (#19)
 CaseInsensitiveAssetClass: TypeAlias = Annotated[AssetClass, BeforeValidator(_lower_str)]
 
 # Custom types for better CLI help labels (metavars)
