@@ -791,7 +791,7 @@
           "--period"
         ],
         "dest": "period",
-        "metavar": "{D1,D5,MO1,MO3,MO6,Y1,Y2,Y5,Y10,YTD,MAX}",
+        "metavar": "{1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max}",
         "help": "Range of historical data (e.g. 1mo, 1y, max)",
         "action": "_StoreAction",
         "nargs": null,
