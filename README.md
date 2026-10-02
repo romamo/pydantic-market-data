@@ -98,7 +98,7 @@ Key CLI features:
 - **Improved Flags**: Normalizes double-dash flags like `--vv` to `-vv`.
 - **JSON Schema**: Adds a `--schema` flag to output the interface definition.
 - **Consistent Defaults**: Whatever order your `BaseSettings` subclass lists its bases in, multi-word fields become `--asset-class`, `-v`/`-vv` are valueless flags, and optional values show as `--symbol SYMBOL` (not `{SYMBOL,null}`). Pass `cli_kebab_case`, `cli_implicit_flags` or `cli_hide_none_type` to the source to override.
-- **Metavars**: Custom types (`SYMBOL`, `ISIN`, etc.) provide descriptive help labels.
+- **Metavars**: Custom types (`SYMBOL`, `ISIN`, etc.) provide descriptive help labels. The top-level `pydantic_market_data.ISIN` is the validating value object; the `ISIN` metavar lives in `pydantic_market_data.cli_models`.
 
 `SearchArgs` and `HistoryArgs` are `SecurityQueryArgs` and `HistoryQueryArgs` plus `GlobalArgs` (`-v`, `-vv`, `--format`, `--schema`). `SearchArgs` also adds `--limit`, a paging option that list-command frameworks are expected to own. If your CLI framework already owns those options, use the domain-only `*QueryArgs` models instead:
 

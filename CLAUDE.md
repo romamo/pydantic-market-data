@@ -47,7 +47,7 @@ Defines the `DataSource` `Protocol` with four methods: `search`, `resolve`, `his
 
 Built on top of `pydantic-settings` `CliSettingsSource`. Contains:
 
-- **Metavar classes** (`SYMBOL`, `ISIN`, `DATE`, `PRICE`, …): bare `str`/`float`/`int` subclasses whose `__qualname__` becomes the argparse metavar in help output. They implement `__get_pydantic_core_schema__` so Pydantic still treats them as the primitive type.
+- **Metavar classes** (`SYMBOL`, `ISIN`, `DATE`, `PRICE`, …): bare `str`/`float`/`int` subclasses whose `__qualname__` becomes the argparse metavar in help output. `ISIN` is not re-exported at the top level (there `ISIN` is the value object from `models`); import the metavar from `pydantic_market_data.cli_models`. They implement `__get_pydantic_core_schema__` so Pydantic still treats them as the primitive type.
 - **`GlobalArgs`**: base model with `-v` / `-vv` / `--format` / `--schema` shared across all commands.
 - **`SecurityQueryArgs` / `HistoryQueryArgs`**: domain-only argument models (no CLI-framework fields), for frameworks that own `-v` / `--format` / `--schema` themselves.
 - **`SearchArgs` / `HistoryArgs`**: concrete command models, `class SearchArgs(SecurityQueryArgs, GlobalArgs)`. `GlobalArgs` is listed last so its fields come first (pydantic collects fields in reverse MRO); `tests/fixtures/cli_args_v0_6_0.json` freezes their schema and CLI parser structure.

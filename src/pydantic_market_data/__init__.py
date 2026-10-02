@@ -7,7 +7,6 @@ from .cli_models import (
     DATE,
     EXCHANGE,
     FORMAT,
-    ISIN,
     LIMIT,
     NAME,
     PATH,
@@ -25,6 +24,7 @@ from .cli_models import (
 from .interfaces import DataSource
 from .models import (
     FIGI,
+    ISIN,
     OHLCV,
     AssetClass,
     Country,
