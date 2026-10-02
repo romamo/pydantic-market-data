@@ -3,7 +3,7 @@ import json
 import re
 from argparse import Action, ArgumentParser
 from collections.abc import Callable
-from typing import Annotated, Any, Literal, TypeAlias
+from typing import Annotated, Any, Literal, TypeAlias, get_args, get_origin
 
 from pydantic import BaseModel, BeforeValidator, Field, GetCoreSchemaHandler
 from pydantic.fields import FieldInfo
@@ -17,7 +17,9 @@ def _lower_str(v: Any) -> Any:
     return v.lower() if isinstance(v, str) else v
 
 
-# AssetClass that accepts any letter case on input ("Equity", "EQUITY" -> AssetClass.EQUITY)
+# AssetClass that accepts any letter case from Python callers ("Equity", "EQUITY" ->
+# AssetClass.EQUITY). The JSON schema keeps the lowercase AssetClass enum, so schema-driven
+# CLIs that validate against it accept lowercase values only (#19)
 CaseInsensitiveAssetClass: TypeAlias = Annotated[AssetClass, BeforeValidator(_lower_str)]
 
 # Custom types for better CLI help labels (metavars)
@@ -166,7 +168,7 @@ class SecurityQueryArgs(BaseModel):
     currency: CURR | None = Field(None, description="Currency code (e.g. USD, EUR, GBP)")
     country: CC | None = Field(None, description="Two-letter country code")
     asset_class: CaseInsensitiveAssetClass | None = Field(
-        None, description="Asset class (equity, commodity, etc.)"
+        None, description="Asset class, lowercase: equity, commodity, etc."
     )
     date: FlexibleDate | None = Field(None, description="Reference date for price/validation")
     price: PRICE | None = Field(None, description="Reference price for validation")
@@ -255,6 +257,14 @@ class PatchedCliSettingsSource(CliSettingsSource):
         _help = re.sub(r"\s*\(default:.*?\)", "", _help)
         _help = re.sub(r"\s*\(default factory:.*?\)", "", _help)
         return _help
+
+    def _metavar_format_recurse(self, obj: Any) -> str:
+        # Show AssetClass by value ({equity,fixed_income,...}), the lowercase form the JSON
+        # schema advertises, instead of pydantic-settings' member names ({EQUITY,...}) (#19)
+        enum_type = get_args(obj)[0] if get_origin(obj) is Annotated else obj
+        if enum_type is AssetClass:
+            return "{" + ",".join(member.value for member in AssetClass) + "}"
+        return str(super()._metavar_format_recurse(obj))
 
     def _connect_root_parser(  # type: ignore[override]
         self,

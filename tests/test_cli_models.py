@@ -299,6 +299,17 @@ def test_asset_class_is_case_insensitive(raw):
     assert SecurityQueryArgs(asset_class=raw).asset_class is AssetClass.EQUITY
 
 
+@pytest.mark.parametrize("model", [SecurityQueryArgs, SearchArgs])
+def test_asset_class_contract_schema_lowercase_python_any_case(model):
+    # Issue #19: the schema advertises lowercase values only (schema-driven CLIs reject
+    # "Equity"), while model_validate still folds case for Python callers
+    enum = model.model_json_schema()["$defs"]["AssetClass"]["enum"]
+    assert enum == [c.value for c in AssetClass]
+    assert all(value == value.lower() for value in enum)
+    for raw in ("equity", "Equity", "EQUITY"):
+        assert model.model_validate({"asset_class": raw}).asset_class is AssetClass.EQUITY
+
+
 @pytest.mark.parametrize("raw", ["stock", "", 1])
 def test_asset_class_rejects_unknown(raw):
     with pytest.raises(ValidationError):
@@ -326,6 +337,42 @@ def test_cli_parses_typed_asset_class_and_date(model):
     args = Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
     assert args.asset_class is AssetClass.EQUITY
     assert args.date == date(2024, 1, 15)
+
+
+_ASSET_CLASS_CHOICES = "{" + ",".join(c.value for c in AssetClass) + "}"
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+@pytest.mark.parametrize("raw", ["Equity", "equity", "EQUITY"])
+def test_cli_parses_any_case_asset_class_despite_lowercase_help(model, raw):
+    # Issue #19: --help lists lowercase values, but argparse has no `choices` to reject
+    # mixed case, so the value reaches pydantic's case-folding validator
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_parse_args=["--asset-class", raw])
+    assert _action_by_dest(source, "asset_class").choices is None
+    assert Cli.model_validate(source()).asset_class is AssetClass.EQUITY
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+def test_cli_help_shows_lowercase_asset_class_choices(model):
+    # Issue #19: help shows the lowercase values the JSON schema advertises, not member names
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_prog_name="tool")
+    assert _ASSET_CLASS_CHOICES == (
+        "{equity,fixed_income,cash,commodity,real_estate,fx,crypto,derivative,alternative,index}"
+    )
+    assert _action_by_dest(source, "asset_class").metavar == _ASSET_CLASS_CHOICES
+    help_text = re.sub(r"\s+", "", _strip_ansi(source.root_parser.format_help()))
+    assert f"--asset-class{_ASSET_CLASS_CHOICES}" in help_text
+    assert "EQUITY" not in help_text
+
+
+def _action_by_dest(source: PatchedCliSettingsSource, dest: str) -> argparse.Action:
+    return next(a for a in source.root_parser._actions if a.dest == dest)
 
 
 @pytest.mark.parametrize("model", _QUERY_MODELS)
