@@ -155,3 +155,27 @@ def test_str_validators_unchanged() -> None:
     assert clean_isin("NONE") is None
     assert validate_figi("") is None
     assert validate_figi(_FIGI) == _FIGI
+
+
+# --- Lax str coercion must not bypass the checks -----------------------------------------
+
+
+@pytest.mark.parametrize("build", [*_BUILDERS, *_FIGI_BUILDERS])
+@pytest.mark.parametrize("value", [b"junk", bytearray(b"junk")])
+def test_vo_validates_bytes_after_coercion(build: Callable[[Any], Any], value: Any) -> None:
+    with pytest.raises(ValidationError, match="Invalid"):
+        build(value)
+
+
+@pytest.mark.parametrize("build", [*_BUILDERS, *_FIGI_BUILDERS])
+def test_vo_accepts_valid_bytes(build: Callable[[Any], Any]) -> None:
+    value = _ISIN if build in _BUILDERS else _FIGI
+    assert build(f" {value.lower()} ".encode()).root == value
+
+
+@pytest.mark.parametrize("make", _MODELS)
+@pytest.mark.parametrize("field", ["isin", "figi"])
+@pytest.mark.parametrize("value", [b"junk", bytearray(b"junk")])
+def test_identifier_field_rejects_bytes(make: Callable[..., Any], field: str, value: Any) -> None:
+    with pytest.raises(ValidationError):
+        make(**{field: value})

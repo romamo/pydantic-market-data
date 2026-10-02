@@ -8,7 +8,7 @@ All notable changes to this project will be documented in this file.
 - `ISIN` and `FIGI` now validate their own root: `ISIN(...)`, `ISIN(root=...)` and `ISIN.model_validate(...)` strip and upper-case the value and raise `ValidationError` on a bad format or checksum (`ISIN("NOTANISIN123")` used to build silently), and likewise for `FIGI` (format, reserved prefix, check digit). Empty or placeholder values (`""`, `"-"`, `"NONE"` for `ISIN`; `""` for `FIGI`) also raise, since a value object cannot hold `None`. `validate_isin`, `clean_isin` and `validate_figi` keep their behaviour for `str` callers (#26)
 
 ### Fixed
-- `ISIN.Input` / `FIGI.Input` fields (`Security.isin`/`figi`, `SecurityQuery.isin`/`figi`, including assignment on `SecurityQuery`) now accept an `ISIN` / `FIGI` instance and store its string; they raised `AttributeError: 'ISIN' object has no attribute 'strip'` before. Placeholders still become `None` on the field as before, and a non-string value such as `123` now raises `ValidationError` instead of a raw `AttributeError`. The JSON schemas are unchanged (#26)
+- `ISIN.Input` / `FIGI.Input` fields (`Security.isin`/`figi`, `SecurityQuery.isin`/`figi`, including assignment on `SecurityQuery`) now accept an `ISIN` / `FIGI` instance and store its string; they raised `AttributeError: 'ISIN' object has no attribute 'strip'` before. Placeholders still become `None` on the field as before, and a non-string value such as `123` or `b"..."` now raises `ValidationError` instead of a raw `AttributeError` or `TypeError`. On the VOs the checks run after pydantic's `str` coercion, so `ISIN(b"junk")` is rejected too. The JSON schemas are unchanged (#26)
 
 ## [0.7.0] - 2026-10-02
 
