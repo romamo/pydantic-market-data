@@ -9,6 +9,7 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 - `--asset-class` help now lists the lowercase `AssetClass` values (`{equity,fixed_income,...}`, was the member names `{EQUITY,FIXED_INCOME,...}`) and the `asset_class` description reads "Asset class, lowercase: equity, commodity, etc.", matching the JSON schema enum; the schema `description` changes with it. `PatchedCliSettingsSource` CLIs still parse any case (`--asset-class Equity`) (#19)
+- `PatchedCliSettingsSource` now renders every `Enum` field's help choices from member values, not member names: `--period` on `HistoryArgs` and `HistoryQueryArgs` shows `{1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max}` (was `{D1,D5,MO1,...}`), matching the JSON schema enum. This also applies to enum fields in downstream models (e.g. `HistoryInterval` shows `{1m,...,1wk,...}`), optional enums included; `Literal` choices are unchanged. Parsing is unchanged: `--period 1d` and `--period D1` both still give `HistoryPeriod.D1` (#22)
 
 ### Fixed
 - Corrected the 0.6.0 note on `SecurityQueryArgs.asset_class` letter case: `model_validate` and Python callers may pass any case (`Equity`, `EQUITY`, `equity`), but the JSON schema advertises the lowercase `AssetClass` enum only, so schema-driven CLIs that validate against it accept lowercase values only (`equity`). Schema and type are unchanged (#19)

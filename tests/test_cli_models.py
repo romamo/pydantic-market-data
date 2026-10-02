@@ -5,11 +5,13 @@ import re
 import subprocess
 import sys
 from datetime import date
+from enum import IntEnum
 from pathlib import Path
+from typing import Literal
 from unittest.mock import MagicMock, patch
 
 import pytest
-from pydantic import TypeAdapter, ValidationError
+from pydantic import BaseModel, TypeAdapter, ValidationError
 from pydantic_settings import BaseSettings
 
 import pydantic_market_data as pmd
@@ -35,7 +37,7 @@ from pydantic_market_data.cli_models import (
     SearchArgs,
     SecurityQueryArgs,
 )
-from pydantic_market_data.models import AssetClass, HistoryPeriod
+from pydantic_market_data.models import AssetClass, HistoryInterval, HistoryPeriod
 
 
 def test_custom_types_schema():
@@ -369,6 +371,83 @@ def test_cli_help_shows_lowercase_asset_class_choices(model):
     help_text = re.sub(r"\s+", "", _strip_ansi(source.root_parser.format_help()))
     assert f"--asset-class{_ASSET_CLASS_CHOICES}" in help_text
     assert "EQUITY" not in help_text
+
+
+# --- Issue #22: enum metavars show values, not member names ------------------------------
+
+_PERIOD_CHOICES = "{1d,5d,1mo,3mo,6mo,1y,2y,5y,10y,ytd,max}"
+
+
+@pytest.mark.parametrize("model", [HistoryArgs, HistoryQueryArgs])
+def test_cli_help_shows_period_values(model):
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_prog_name="tool")
+    assert "{" + ",".join(p.value for p in HistoryPeriod) + "}" == _PERIOD_CHOICES
+    assert _action_by_dest(source, "period").metavar == _PERIOD_CHOICES
+    help_text = re.sub(r"\s+", "", _strip_ansi(source.root_parser.format_help()))
+    assert f"--period{_PERIOD_CHOICES}" in help_text
+    assert "MO1" not in help_text
+
+
+@pytest.mark.parametrize("model", [HistoryArgs, HistoryQueryArgs])
+@pytest.mark.parametrize(
+    ("raw", "expected"),
+    [
+        ("1d", HistoryPeriod.D1),
+        ("D1", HistoryPeriod.D1),
+        ("1mo", HistoryPeriod.MO1),
+        ("MO1", HistoryPeriod.MO1),
+        ("ytd", HistoryPeriod.YTD),
+        ("YTD", HistoryPeriod.YTD),
+    ],
+)
+def test_cli_parses_period_by_value_and_member_name(model, raw, expected):
+    # Help change only: member names that parsed before #22 still parse
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_parse_args=["--period", raw])
+    assert _action_by_dest(source, "period").choices is None
+    assert Cli.model_validate(source()).period is expected
+
+
+def test_cli_rejects_unknown_period():
+    class Cli(HistoryArgs, BaseSettings):
+        pass
+
+    with pytest.raises(ValidationError, match="1d"):
+        Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=["--period", "d1"])())
+
+
+class _Level(IntEnum):
+    LOW = 1
+    HIGH = 2
+
+
+class _EnumShapes(BaseModel):
+    interval: HistoryInterval | None = None
+    level: _Level = _Level.LOW
+    mode: Literal["fast", "slow"] = "fast"
+
+
+@pytest.mark.parametrize(
+    ("hide_none", "interval"),
+    [
+        (True, "{1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo}"),
+        (False, "{{1m,2m,5m,15m,30m,60m,90m,1h,1d,5d,1wk,1mo,3mo},null}"),
+    ],
+)
+def test_any_enum_metavar_shows_values(hide_none, interval):
+    # Optional enums, non-str enum values, and untouched Literal choices
+    class Cli(_EnumShapes, BaseSettings):
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_prog_name="tool", cli_hide_none_type=hide_none)
+    assert _action_by_dest(source, "interval").metavar == interval
+    assert _action_by_dest(source, "level").metavar == "{1,2}"
+    assert _action_by_dest(source, "mode").metavar == "{fast,slow}"
 
 
 def _action_by_dest(source: PatchedCliSettingsSource, dest: str) -> argparse.Action:

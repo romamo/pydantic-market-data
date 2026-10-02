@@ -3,6 +3,7 @@ import json
 import re
 from argparse import Action, ArgumentParser
 from collections.abc import Callable
+from enum import Enum
 from typing import Annotated, Any, Literal, TypeAlias, get_args, get_origin
 
 from pydantic import BaseModel, BeforeValidator, Field, GetCoreSchemaHandler
@@ -259,11 +260,12 @@ class PatchedCliSettingsSource(CliSettingsSource):
         return _help
 
     def _metavar_format_recurse(self, obj: Any) -> str:
-        # Show AssetClass by value ({equity,fixed_income,...}), the lowercase form the JSON
-        # schema advertises, instead of pydantic-settings' member names ({EQUITY,...}) (#19)
+        # Show enums by value ({equity,...}, {1d,5d,1mo,...}), the form the JSON schema
+        # advertises, instead of pydantic-settings' member names ({EQUITY,...}, {D1,...})
+        # (#19, #22). Unions recurse through here, so `HistoryPeriod | None` is covered too
         enum_type = get_args(obj)[0] if get_origin(obj) is Annotated else obj
-        if enum_type is AssetClass:
-            return "{" + ",".join(member.value for member in AssetClass) + "}"
+        if isinstance(enum_type, type) and issubclass(enum_type, Enum):
+            return "{" + ",".join(str(member.value) for member in enum_type) + "}"
         return str(super()._metavar_format_recurse(obj))
 
     def _connect_root_parser(  # type: ignore[override]
