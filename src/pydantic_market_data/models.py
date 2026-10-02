@@ -350,7 +350,8 @@ class QuoteCurrency(str):
     ``pydantic_extra_types.currency_code.Currency``) or a minor-unit quote code: ``GBX``
     (pence), ``ZAC`` (South African cents), ``ILA`` (agorot). Input is case-insensitive and
     stored uppercase, except the exact mixed-case ``GBp`` and ``ZAc``, which mean ``GBX`` and
-    ``ZAC`` (``gbp`` and ``Gbp`` still mean ``GBP``).
+    ``ZAC`` (``gbp`` and ``Gbp`` still mean ``GBP``). Direct construction validates too:
+    ``QuoteCurrency("GBp") == "GBX"``; an unknown code raises ``ValueError``.
     """
 
     allowed_codes: ClassVar[list[str]] = sorted(
@@ -358,18 +359,25 @@ class QuoteCurrency(str):
     )
     _allowed: ClassVar[frozenset[str]] = frozenset(allowed_codes)
 
-    @classmethod
-    def _validate(cls, v: str) -> QuoteCurrency:
-        code = _MIXED_CASE_MINOR_ALIASES.get(v, v.upper())
+    def __new__(cls, value: str) -> QuoteCurrency:
+        if not isinstance(value, str):
+            raise TypeError(f"Currency code must be a str, got {type(value).__name__}")
+        code = _MIXED_CASE_MINOR_ALIASES.get(value, value.upper())
         if code not in cls._allowed:
+            # PydanticCustomError is a ValueError, so direct construction raises ValueError
+            # and the pydantic path reports error type "InvalidCurrency"
             raise PydanticCustomError(
                 "InvalidCurrency",
                 "Invalid currency code '{code}': expected an ISO 4217 currency code"
                 " (https://en.wikipedia.org/wiki/ISO_4217; bond, testing and precious metal"
                 " codes are not allowed) or a minor-unit code GBX/GBp, ZAC/ZAc, ILA",
-                {"code": v},
+                {"code": value},
             )
-        return cls(code)
+        return super().__new__(cls, code)
+
+    @classmethod
+    def _validate(cls, v: str) -> QuoteCurrency:
+        return cls(v)
 
     @classmethod
     def __get_pydantic_core_schema__(

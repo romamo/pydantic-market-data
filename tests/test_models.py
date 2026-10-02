@@ -1,3 +1,5 @@
+import copy
+import pickle  # nosec B403
 import warnings
 from datetime import date, datetime
 
@@ -347,6 +349,42 @@ def test_currency_code_value_is_a_str_quote_currency():
 def test_major_currency_rejects_minor_unit_codes(raw):
     with pytest.raises(ValidationError, match="minor-unit code"):
         MajorCurrency(currency=raw, factor=1)
+
+
+@pytest.mark.parametrize(
+    ("raw", "code"),
+    [("gbp", "GBP"), ("GBp", "GBX"), ("gbx", "GBX"), ("ZAc", "ZAC"), ("ila", "ILA")],
+)
+def test_quote_currency_direct_construction_validates(raw, code):
+    value = QuoteCurrency(raw)
+    assert value == code
+    assert type(value) is QuoteCurrency
+    assert QuoteCurrency(value) == code
+    assert CurrencyCode(value).value == code
+
+
+@pytest.mark.parametrize("raw", ["junk", "ZAX", "XAU", "", "GBp "])
+def test_quote_currency_direct_construction_rejects_unknown(raw):
+    with pytest.raises(ValueError, match="Invalid currency code"):
+        QuoteCurrency(raw)
+
+
+def test_quote_currency_direct_construction_rejects_non_str():
+    with pytest.raises(TypeError):
+        QuoteCurrency(840)  # type: ignore[arg-type]
+
+
+def test_quote_currency_pydantic_error_type():
+    with pytest.raises(ValidationError) as exc:
+        CurrencyCode("ZAX")
+    assert exc.value.errors()[0]["type"] == "InvalidCurrency"
+
+
+def test_quote_currency_survives_copy_and_pickle():
+    s = Security(symbol="VOD:LSE", name="v", currency="GBp")
+    assert copy.deepcopy(s) == s
+    assert s.model_copy(deep=True).currency == CurrencyCode("GBX")
+    assert pickle.loads(pickle.dumps(QuoteCurrency("GBp"))) == "GBX"  # nosec B301
 
 
 def test_currency_error_names_the_code():
