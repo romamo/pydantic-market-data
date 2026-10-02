@@ -8,9 +8,8 @@ from typing import Any
 import pytest
 from pydantic import ValidationError
 
-from pydantic_market_data import Security, SecurityQuery
-
-# The top-level ``ISIN`` is the CLI metavar; the value object lives in ``models``.
+import pydantic_market_data
+from pydantic_market_data import Security, SecurityQuery, cli_models, models
 from pydantic_market_data.models import FIGI, ISIN, clean_isin, validate_figi, validate_isin
 
 _ISIN = "US0378331005"  # Apple
@@ -179,3 +178,14 @@ def test_vo_accepts_valid_bytes(build: Callable[[Any], Any]) -> None:
 def test_identifier_field_rejects_bytes(make: Callable[..., Any], field: str, value: Any) -> None:
     with pytest.raises(ValidationError):
         make(**{field: value})
+
+
+def test_top_level_identifiers_are_value_objects() -> None:
+    """Issue #28: top-level ``ISIN`` is the value object, like ``FIGI``, not the CLI metavar."""
+    assert pydantic_market_data.ISIN is models.ISIN
+    assert pydantic_market_data.FIGI is models.FIGI
+    assert pydantic_market_data.ISIN is not cli_models.ISIN
+    assert pydantic_market_data.__all__.count("ISIN") == 1
+    assert pydantic_market_data.ISIN(_ISIN).root == _ISIN
+    with pytest.raises(ValidationError, match="Invalid ISIN checksum"):
+        pydantic_market_data.ISIN("NOTANISIN123")
