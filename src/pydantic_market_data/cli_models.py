@@ -11,7 +11,7 @@ from pydantic.fields import FieldInfo
 from pydantic_core import core_schema
 from pydantic_settings import BaseSettings, CliSettingsSource, SettingsConfigDict
 
-from .models import AssetClass, Currency, FlexibleDate, HistoryPeriod
+from .models import AssetClass, FlexibleDate, HistoryPeriod, QuoteCurrency
 
 
 def _lower_str(v: Any) -> Any:
@@ -65,7 +65,7 @@ class CURR(str):
     def __get_pydantic_core_schema__(
         cls, _st: Any, handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return handler.generate_schema(Currency)
+        return handler.generate_schema(QuoteCurrency)
 
 
 class CC(str):

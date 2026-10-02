@@ -4,8 +4,14 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+- Minor-unit quote currencies: `CurrencyCode` (so `Security.currency`, `SecurityQuery.currency`, and `--currency` / `currency` on `SecurityQueryArgs` and `SearchArgs`) accepts `GBX` (pence), `ZAC` (South African cents) and `ILA` (agorot) besides ISO 4217 codes, case-insensitively, plus the exact mixed-case `GBp` and `ZAc`, stored as `GBX` and `ZAC`. The JSON schema enum of `CurrencyCode` and of the `currency` CLI argument gains `GBX`, `ILA` and `ZAC`, in sorted position; nothing else in the schema changes. `ZAX` and other codes are still rejected (#25)
+- `CurrencyCode.to_major()` returns a `MajorCurrency` (`currency`, `factor`) to convert a quoted price to its major currency: `GBX` gives `GBP` and 100, `ZAC` gives `ZAR` and 100, `ILA` gives `ILS` and 100, an ISO code gives itself and 1. `MajorCurrency` and `QuoteCurrency` (the validated `str` subtype behind `CurrencyCode` and `CURR`) are exported from the top-level package (#25)
+
 ### Changed (Breaking)
 - `ISIN` and `FIGI` now validate their own root: `ISIN(...)`, `ISIN(root=...)` and `ISIN.model_validate(...)` strip and upper-case the value and raise `ValidationError` on a bad format or checksum (`ISIN("NOTANISIN123")` used to build silently), and likewise for `FIGI` (format, reserved prefix, check digit). Empty or placeholder values (`""`, `"-"`, `"NONE"` for `ISIN`; `""` for `FIGI`) also raise, since a value object cannot hold `None`. `validate_isin`, `clean_isin` and `validate_figi` keep their behaviour for `str` callers (#26)
+- `currency="GBp"` (exact mixed case) now means pence (`GBX`), not pounds: before, it was uppercased to `GBP`, a silent 100x error for LSE prices quoted in pence. Any other spelling (`GBP`, `gbp`, `Gbp`) still means `GBP` (#25)
+- `CurrencyCode` is now `RootModel[QuoteCurrency]` (was `RootModel[Currency]`), `CurrencyCode.value` returns `QuoteCurrency`, and `CurrencyCode.Input` is `CurrencyCode | QuoteCurrency | str`. `QuoteCurrency` is a `str` subtype, so `str(...)`, `==` with `"USD"`, and `model_dump()` are unchanged. The validation error for an unknown code keeps the type `InvalidCurrency` but its message now names the code and the accepted minor-unit codes (#25)
 
 ### Fixed
 - `ISIN.Input` / `FIGI.Input` fields (`Security.isin`/`figi`, `SecurityQuery.isin`/`figi`, including assignment on `SecurityQuery`) now accept an `ISIN` / `FIGI` instance and store its string; they raised `AttributeError: 'ISIN' object has no attribute 'strip'` before. Placeholders still become `None` on the field as before, and a non-string value such as `123` or `b"..."` now raises `ValidationError` instead of a raw `AttributeError` or `TypeError`. On the VOs the checks run after pydantic's `str` coercion, so `ISIN(b"junk")` is rejected too. The JSON schemas are unchanged (#26)

@@ -670,3 +670,60 @@ def test_positional_none_still_gets_the_default():
     source = PatchedCliSettingsSource(cli, "tool", None, "null", None)
     assert source.cli_hide_none_type is True
     assert _action(source, "--symbol").metavar == "SYMBOL"
+
+
+# --- Issue #25: minor-unit quote currencies ---------------------------------------------
+
+_CURRENCY_CASES = [
+    ("GBX", "GBX"),
+    ("gbx", "GBX"),
+    ("GBp", "GBX"),
+    ("ZAc", "ZAC"),
+    ("zac", "ZAC"),
+    ("ILA", "ILA"),
+    ("GBP", "GBP"),
+    ("gbp", "GBP"),
+    ("Gbp", "GBP"),
+    ("usd", "USD"),
+]
+
+
+@pytest.mark.parametrize(("raw", "code"), _CURRENCY_CASES)
+def test_query_args_currency_minor_units(raw, code):
+    assert SecurityQueryArgs.model_validate({"currency": raw}).currency == code
+    assert TypeAdapter(CURR).validate_python(raw) == code
+
+
+@pytest.mark.parametrize("raw", ["XXXX", "ABC", "ZAX", "XAU"])
+def test_query_args_currency_rejects_unknown_codes(raw):
+    with pytest.raises(ValidationError):
+        SecurityQueryArgs.model_validate({"currency": raw})
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+@pytest.mark.parametrize(("raw", "code"), _CURRENCY_CASES)
+def test_cli_parses_minor_unit_currency(model, raw, code):
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_parse_args=["--currency", raw])
+    assert _action(source, "--currency").metavar == "CURR"
+    assert Cli.model_validate(source()).currency == code
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+def test_cli_rejects_unknown_currency(model):
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    with pytest.raises(ValidationError):
+        Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=["--currency", "ZAX"])())
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+def test_currency_schema_enum_adds_minor_unit_codes(model):
+    prop = model.model_json_schema()["properties"]["currency"]
+    enum = next(branch["enum"] for branch in prop["anyOf"] if "enum" in branch)
+    assert {"GBX", "ILA", "ZAC"} <= set(enum)
+    assert "ZAX" not in enum
+    assert "GBp" not in enum
