@@ -1,3 +1,4 @@
+import warnings
 from datetime import date, datetime
 
 import pytest
@@ -193,3 +194,69 @@ def test_security_figi_valid():
 def test_security_figi_invalid():
     with pytest.raises(ValidationError):
         Security(symbol="AAPL", name="Apple", figi="NOTAFIGI")
+
+
+# --- Issue #18: FlexibleDate accepts only YYYY-MM-DD, YYYY/MM/DD and YYYYMMDD ----------------
+
+ACCEPTED_DATES = ["2025-01-15", "2025/01/15", "20250115", date(2025, 1, 15)]
+REJECTED_DATES = [
+    "01/02/2025",  # ambiguous day/month: was read month-first as 2025-01-02
+    "15/01/2025",
+    "15.01.2025",
+    "Jan 15 2025",
+    "2024-01-15T10:00:00",
+    "2025-01/15",  # mixed separators
+    "2025.01.15",
+    " 2025-01-15",
+    "2025-1-15",
+    "250115",
+]
+_FORMATS_MESSAGE = "expected YYYY-MM-DD, YYYY/MM/DD or YYYYMMDD"
+
+
+@pytest.mark.parametrize("raw", ACCEPTED_DATES)
+def test_price_on_date_accepts_documented_shapes(raw):
+    assert PriceOnDate(price=1.0, date=raw).date == date(2025, 1, 15)
+
+
+@pytest.mark.parametrize("raw", ACCEPTED_DATES)
+def test_security_query_price_on_accepts_documented_shapes(raw):
+    sq = SecurityQuery(price_on={"price": 1.0, "date": raw})
+    assert sq.price_on is not None
+    assert sq.price_on[0].date == date(2025, 1, 15)
+
+
+@pytest.mark.parametrize("raw", REJECTED_DATES)
+def test_price_on_date_rejects_other_shapes(raw):
+    with pytest.raises(ValidationError, match=_FORMATS_MESSAGE):
+        PriceOnDate(price=1.0, date=raw)
+
+
+@pytest.mark.parametrize("raw", REJECTED_DATES)
+def test_security_query_price_on_rejects_other_shapes(raw):
+    with pytest.raises(ValidationError, match=_FORMATS_MESSAGE):
+        SecurityQuery(price_on={"price": 1.0, "date": raw})
+
+
+@pytest.mark.parametrize("raw", ["2024-02-30", "2024/02/30", "20240230", "2025-13-01"])
+def test_price_on_date_rejects_impossible_dates(raw):
+    with pytest.raises(ValidationError):
+        PriceOnDate(price=1.0, date=raw)
+
+
+def test_price_on_date_accepts_leap_day():
+    assert PriceOnDate(price=1.0, date="2024-02-29").date == date(2024, 2, 29)
+
+
+def test_price_on_date_rejection_emits_no_warning():
+    # pd.to_datetime warned "Parsing dates in %d/%m/%Y format" on stderr for 15/01/2025
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        with pytest.raises(ValidationError):
+            PriceOnDate(price=1.0, date="15/01/2025")
+
+
+def test_price_on_date_datetime_object_behaviour_unchanged():
+    assert PriceOnDate(price=1.0, date=datetime(2025, 1, 15)).date == date(2025, 1, 15)
+    with pytest.raises(ValidationError):
+        PriceOnDate(price=1.0, date=datetime(2025, 1, 15, 10, 0))

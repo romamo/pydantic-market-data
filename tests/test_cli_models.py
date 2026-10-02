@@ -336,6 +336,42 @@ def test_date_rejects_empty_and_nat_with_validation_error(model, raw):
         model(date=raw)
 
 
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+@pytest.mark.parametrize(
+    "raw",
+    [
+        "01/02/2025",  # ambiguous day/month: was read month-first as 2025-01-02
+        "15/01/2025",
+        "15.01.2025",
+        "Jan 15 2025",
+        "2024-01-15T10:00:00",
+        "2025-01/15",
+        " 2025-01-15",
+    ],
+)
+def test_date_rejects_other_shapes(model, raw):
+    # Issue #18: only YYYY-MM-DD, YYYY/MM/DD and YYYYMMDD strings are accepted
+    with pytest.raises(ValidationError, match="expected YYYY-MM-DD, YYYY/MM/DD or YYYYMMDD"):
+        model(date=raw)
+
+
+@pytest.mark.parametrize("model", _QUERY_MODELS)
+@pytest.mark.parametrize("raw", ["2024-02-30", "2024/02/30", "20240230"])
+def test_date_rejects_impossible_day(model, raw):
+    with pytest.raises(ValidationError, match="day"):  # wording differs by Python version
+        model(date=raw)
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs, HistoryQueryArgs])
+def test_cli_rejects_ambiguous_date(model):
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    argv = ["--date", "01/02/2025"]
+    with pytest.raises(ValidationError, match="expected YYYY-MM-DD"):
+        Cli.model_validate(PatchedCliSettingsSource(Cli, cli_parse_args=argv)())
+
+
 # --- Issue #10: kebab-case flags by default -----------------------------------------------
 
 

@@ -35,7 +35,7 @@ This is a small, single-package library (`src/pydantic_market_data/`) with three
 
 All financial entities live here. The central pattern is the **Namespace Pattern for Value Objects**: every VO (e.g. `Symbol`, `Price`, `ISIN`, `Country`, `CurrencyCode`) is a Pydantic `RootModel` that exposes an `Input` class attribute. Under `TYPE_CHECKING` this is a `TypeAlias` (`"Symbol" | str`) so mypy sees the wide union; at runtime it's an `Annotated` type with a `BeforeValidator` so Pydantic performs coercion. Fields on models use `VO.Input` (e.g. `symbol: Symbol.Input`) to accept primitives at the boundary while keeping internal values strongly typed.
 
-`FlexibleDate` / `FlexibleDatetime` are type aliases (not VOs) that use `BeforeValidator(parse_date/parse_datetime)` backed by `pd.to_datetime` — they handle ISO, slash, and compressed date strings.
+`FlexibleDate` / `FlexibleDatetime` are type aliases (not VOs) that use `BeforeValidator(parse_date/parse_datetime)` `parse_date` accepts only the strings `YYYY-MM-DD`, `YYYY/MM/DD` and `YYYYMMDD` (plus `date`/`datetime` objects) and raises `ValueError` for anything else; `parse_datetime` is backed by `pd.to_datetime`.
 
 `PriceVerificationError` is a rich exception that carries the original market data for structured error reporting downstream.
 

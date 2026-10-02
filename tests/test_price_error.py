@@ -1,5 +1,7 @@
 from datetime import date
 
+import pytest
+
 from pydantic_market_data import Price, PriceVerificationError, Symbol
 
 
@@ -61,3 +63,20 @@ def test_price_verification_error_no_details():
     )
 
     assert str(err) == "[TSLA] No data found"
+
+
+@pytest.mark.parametrize("raw", ["01/02/2025", "15/01/2025", "Jan 15 2025", "2024-01-15T10:00:00"])
+def test_price_verification_error_rejects_other_date_shapes(raw):
+    # parse_date runs outside pydantic here, so the error is a plain ValueError
+    with pytest.raises(ValueError, match="expected YYYY-MM-DD, YYYY/MM/DD or YYYYMMDD"):
+        PriceVerificationError(
+            message="No data found", symbol="TSLA", actual_date=raw, expected_price=100.0
+        )
+
+
+@pytest.mark.parametrize("raw", ["2023/01/01", "20230101"])
+def test_price_verification_error_accepts_documented_date_shapes(raw):
+    err = PriceVerificationError(
+        message="No data found", symbol="TSLA", actual_date=raw, expected_price=100.0
+    )
+    assert err.actual_date == date(2023, 1, 1)

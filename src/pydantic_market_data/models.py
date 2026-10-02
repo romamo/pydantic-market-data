@@ -20,12 +20,17 @@ from pydantic_extra_types.currency_code import Currency
 # Re-exported for downstream consumers
 
 
+_DATE_PATTERN = re.compile(r"([0-9]{4})([-/]?)([0-9]{2})\2([0-9]{2})")
+
+
 def parse_date(v: date | str) -> date:
+    """Parse ``YYYY-MM-DD``, ``YYYY/MM/DD`` or ``YYYYMMDD``; date objects pass through."""
     if isinstance(v, str):
-        ts = pd.to_datetime(v)
-        if pd.isna(ts):
-            raise ValueError(f"Invalid date: {v!r}")
-        return ts.date()
+        match = _DATE_PATTERN.fullmatch(v)
+        if match is None:
+            raise ValueError(f"Invalid date: {v!r}; expected YYYY-MM-DD, YYYY/MM/DD or YYYYMMDD")
+        year, _, month, day = match.groups()
+        return date(int(year), int(month), int(day))
     return v
 
 
