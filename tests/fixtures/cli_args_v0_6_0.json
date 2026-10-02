@@ -307,7 +307,7 @@
             }
           ],
           "default": null,
-          "description": "Asset class (equity, commodity, etc.)"
+          "description": "Asset class, lowercase: equity, commodity, etc."
         },
         "date": {
           "anyOf": [
@@ -643,8 +643,8 @@
           "--asset-class"
         ],
         "dest": "asset_class",
-        "metavar": "{EQUITY,FIXED_INCOME,CASH,COMMODITY,REAL_ESTATE,FX,CRYPTO,DERIVATIVE,ALTERNATIVE,INDEX}",
-        "help": "Asset class (equity, commodity, etc.)",
+        "metavar": "{equity,fixed_income,cash,commodity,real_estate,fx,crypto,derivative,alternative,index}",
+        "help": "Asset class, lowercase: equity, commodity, etc.",
         "action": "_StoreAction",
         "nargs": null,
         "default_suppressed": true

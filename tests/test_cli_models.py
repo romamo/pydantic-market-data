@@ -339,6 +339,42 @@ def test_cli_parses_typed_asset_class_and_date(model):
     assert args.date == date(2024, 1, 15)
 
 
+_ASSET_CLASS_CHOICES = "{" + ",".join(c.value for c in AssetClass) + "}"
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+@pytest.mark.parametrize("raw", ["Equity", "equity", "EQUITY"])
+def test_cli_parses_any_case_asset_class_despite_lowercase_help(model, raw):
+    # Issue #19: --help lists lowercase values, but argparse has no `choices` to reject
+    # mixed case, so the value reaches pydantic's case-folding validator
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_parse_args=["--asset-class", raw])
+    assert _action_by_dest(source, "asset_class").choices is None
+    assert Cli.model_validate(source()).asset_class is AssetClass.EQUITY
+
+
+@pytest.mark.parametrize("model", [SearchArgs, SecurityQueryArgs])
+def test_cli_help_shows_lowercase_asset_class_choices(model):
+    # Issue #19: help shows the lowercase values the JSON schema advertises, not member names
+    class Cli(model, BaseSettings):  # type: ignore[misc, valid-type]
+        pass
+
+    source = PatchedCliSettingsSource(Cli, cli_prog_name="tool")
+    assert _ASSET_CLASS_CHOICES == (
+        "{equity,fixed_income,cash,commodity,real_estate,fx,crypto,derivative,alternative,index}"
+    )
+    assert _action_by_dest(source, "asset_class").metavar == _ASSET_CLASS_CHOICES
+    help_text = re.sub(r"\s+", "", _strip_ansi(source.root_parser.format_help()))
+    assert f"--asset-class{_ASSET_CLASS_CHOICES}" in help_text
+    assert "EQUITY" not in help_text
+
+
+def _action_by_dest(source: PatchedCliSettingsSource, dest: str) -> argparse.Action:
+    return next(a for a in source.root_parser._actions if a.dest == dest)
+
+
 @pytest.mark.parametrize("model", _QUERY_MODELS)
 @pytest.mark.parametrize("raw", ["", "nan", "NaT"])
 def test_date_rejects_empty_and_nat_with_validation_error(model, raw):
