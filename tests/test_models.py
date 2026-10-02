@@ -1,10 +1,23 @@
+import copy
+import pickle  # nosec B403
 import warnings
 from datetime import date, datetime
 
 import pytest
 from pydantic import ValidationError
+from pydantic_extra_types.currency_code import Currency
 
-from pydantic_market_data import OHLCV, History, PriceOnDate, Security, SecurityQuery, Symbol
+from pydantic_market_data import (
+    OHLCV,
+    CurrencyCode,
+    History,
+    MajorCurrency,
+    PriceOnDate,
+    QuoteCurrency,
+    Security,
+    SecurityQuery,
+    Symbol,
+)
 from pydantic_market_data.models import clean_isin, validate_figi, validate_isin
 
 
@@ -260,3 +273,120 @@ def test_price_on_date_datetime_object_behaviour_unchanged():
     assert PriceOnDate(price=1.0, date=datetime(2025, 1, 15)).date == date(2025, 1, 15)
     with pytest.raises(ValidationError):
         PriceOnDate(price=1.0, date=datetime(2025, 1, 15, 10, 0))
+
+
+# --- Issue #25: minor-unit quote currencies ---------------------------------------------
+
+_MINOR_CASES = [
+    # (input, canonical code, major code, factor)
+    ("GBX", "GBX", "GBP", 100),
+    ("gbx", "GBX", "GBP", 100),
+    ("GBp", "GBX", "GBP", 100),
+    ("ZAC", "ZAC", "ZAR", 100),
+    ("zac", "ZAC", "ZAR", 100),
+    ("ZAc", "ZAC", "ZAR", 100),
+    ("ILA", "ILA", "ILS", 100),
+    ("ila", "ILA", "ILS", 100),
+    # Only the exact mixed-case GBp/ZAc mean the minor unit; other cases keep the ISO meaning
+    ("GBP", "GBP", "GBP", 1),
+    ("gbp", "GBP", "GBP", 1),
+    ("Gbp", "GBP", "GBP", 1),
+    ("gBp", "GBP", "GBP", 1),
+    ("zar", "ZAR", "ZAR", 1),
+    ("usd", "USD", "USD", 1),
+]
+
+
+@pytest.mark.parametrize(("raw", "code", "major", "factor"), _MINOR_CASES)
+def test_security_currency_minor_units(raw, code, major, factor):
+    currency = Security(symbol="VOD:LSE", name="v", currency=raw).currency
+    assert currency is not None
+    assert currency == CurrencyCode(code)
+    assert str(currency) == code
+    assert currency.value == code
+    assert currency.to_major() == MajorCurrency(currency=major, factor=factor)
+    assert str(currency.to_major().currency) == major
+    assert currency.to_major().factor == factor
+
+
+@pytest.mark.parametrize(("raw", "code"), [(c[0], c[1]) for c in _MINOR_CASES])
+def test_security_query_currency_minor_units_on_assignment(raw, code):
+    q = SecurityQuery(currency=raw)
+    assert str(q.currency) == code
+    q.currency = "USD"
+    assert str(q.currency) == "USD"
+    q.currency = raw
+    assert str(q.currency) == code
+
+
+@pytest.mark.parametrize("raw", ["XXXX", "ABC", "ZAX", "GB", "GBp ", "XAU", 840])
+def test_currency_rejects_unknown_codes(raw):
+    with pytest.raises(ValidationError):
+        Security(symbol="V", name="v", currency=raw)
+    q = SecurityQuery()
+    with pytest.raises(ValidationError):
+        q.currency = raw
+
+
+def test_currency_code_json_schema_adds_only_minor_unit_codes():
+    enum = Security.model_json_schema()["$defs"]["CurrencyCode"]["enum"]
+    assert set(enum) - set(Currency.allowed_countries_list) == {"GBX", "ILA", "ZAC"}
+    assert set(Currency.allowed_countries_list) <= set(enum)
+    assert enum == sorted(enum)
+
+
+def test_currency_code_value_is_a_str_quote_currency():
+    code = CurrencyCode("GBp")
+    assert isinstance(code.value, QuoteCurrency)
+    assert isinstance(code.value, str)
+    assert code.value == "GBX"
+    assert code.model_dump() == "GBX"
+    assert CurrencyCode.model_validate_json('"GBp"') == code
+    assert MajorCurrency(currency="gbp", factor=100).currency == CurrencyCode("GBP")
+
+
+@pytest.mark.parametrize("raw", ["GBX", "GBp", "ILA"])
+def test_major_currency_rejects_minor_unit_codes(raw):
+    with pytest.raises(ValidationError, match="minor-unit code"):
+        MajorCurrency(currency=raw, factor=1)
+
+
+@pytest.mark.parametrize(
+    ("raw", "code"),
+    [("gbp", "GBP"), ("GBp", "GBX"), ("gbx", "GBX"), ("ZAc", "ZAC"), ("ila", "ILA")],
+)
+def test_quote_currency_direct_construction_validates(raw, code):
+    value = QuoteCurrency(raw)
+    assert value == code
+    assert type(value) is QuoteCurrency
+    assert QuoteCurrency(value) == code
+    assert CurrencyCode(value).value == code
+
+
+@pytest.mark.parametrize("raw", ["junk", "ZAX", "XAU", "", "GBp "])
+def test_quote_currency_direct_construction_rejects_unknown(raw):
+    with pytest.raises(ValueError, match="Invalid currency code"):
+        QuoteCurrency(raw)
+
+
+def test_quote_currency_direct_construction_rejects_non_str():
+    with pytest.raises(TypeError):
+        QuoteCurrency(840)  # type: ignore[arg-type]
+
+
+def test_quote_currency_pydantic_error_type():
+    with pytest.raises(ValidationError) as exc:
+        CurrencyCode("ZAX")
+    assert exc.value.errors()[0]["type"] == "InvalidCurrency"
+
+
+def test_quote_currency_survives_copy_and_pickle():
+    s = Security(symbol="VOD:LSE", name="v", currency="GBp")
+    assert copy.deepcopy(s) == s
+    assert s.model_copy(deep=True).currency == CurrencyCode("GBX")
+    assert pickle.loads(pickle.dumps(QuoteCurrency("GBp"))) == "GBX"  # nosec B301
+
+
+def test_currency_error_names_the_code():
+    with pytest.raises(ValidationError, match="Invalid currency code 'ZAX'"):
+        CurrencyCode("ZAX")

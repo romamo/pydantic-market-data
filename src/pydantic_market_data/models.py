@@ -11,9 +11,14 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    PositiveInt,
     RootModel,
     field_validator,
 )
+from pydantic.json_schema import JsonSchemaValue
+from pydantic_core import PydanticCustomError, core_schema
 from pydantic_extra_types.country import CountryAlpha2
 from pydantic_extra_types.currency_code import Currency
 
@@ -328,22 +333,110 @@ class Country(RootModel[CountryAlpha2]):
         return str(self.root)
 
 
-class CurrencyCode(RootModel[Currency]):
+# Minor-unit quote codes (not ISO 4217) -> (major ISO 4217 code, minor units per major unit)
+_MINOR_UNIT_CODES: dict[str, tuple[str, int]] = {
+    "GBX": ("GBP", 100),  # pence sterling, LSE quotes
+    "ZAC": ("ZAR", 100),  # South African cents, JSE quotes
+    "ILA": ("ILS", 100),  # Israeli agorot, TASE quotes
+}
+# Exact mixed-case spellings that mean the minor unit; any other case of "GBP"/"ZAC" does not
+_MIXED_CASE_MINOR_ALIASES: dict[str, str] = {"GBp": "GBX", "ZAc": "ZAC"}
+
+
+class QuoteCurrency(str):
+    """A currency code a price can be quoted in.
+
+    An ISO 4217 currency code (bond, metal and testing codes excluded, as in
+    ``pydantic_extra_types.currency_code.Currency``) or a minor-unit quote code: ``GBX``
+    (pence), ``ZAC`` (South African cents), ``ILA`` (agorot). Input is case-insensitive and
+    stored uppercase, except the exact mixed-case ``GBp`` and ``ZAc``, which mean ``GBX`` and
+    ``ZAC`` (``gbp`` and ``Gbp`` still mean ``GBP``). Direct construction validates too:
+    ``QuoteCurrency("GBp") == "GBX"``; an unknown code raises ``ValueError``.
+    """
+
+    allowed_codes: ClassVar[list[str]] = sorted(
+        [*Currency.allowed_countries_list, *_MINOR_UNIT_CODES]
+    )
+    _allowed: ClassVar[frozenset[str]] = frozenset(allowed_codes)
+
+    def __new__(cls, value: str) -> QuoteCurrency:
+        if not isinstance(value, str):
+            raise TypeError(f"Currency code must be a str, got {type(value).__name__}")
+        code = _MIXED_CASE_MINOR_ALIASES.get(value, value.upper())
+        if code not in cls._allowed:
+            # PydanticCustomError is a ValueError, so direct construction raises ValueError
+            # and the pydantic path reports error type "InvalidCurrency"
+            raise PydanticCustomError(
+                "InvalidCurrency",
+                "Invalid currency code '{code}': expected an ISO 4217 currency code"
+                " (https://en.wikipedia.org/wiki/ISO_4217; bond, testing and precious metal"
+                " codes are not allowed) or a minor-unit code GBX/GBp, ZAC/ZAc, ILA",
+                {"code": value},
+            )
+        return super().__new__(cls, code)
+
+    @classmethod
+    def _validate(cls, v: str) -> QuoteCurrency:
+        return cls(v)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source: Any, _handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        return core_schema.no_info_after_validator_function(
+            cls._validate, core_schema.str_schema(min_length=3, max_length=3)
+        )
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(schema)
+        json_schema["enum"] = list(cls.allowed_codes)
+        return json_schema
+
+
+# The docstring is the JSON schema description: accepted codes are documented on QuoteCurrency
+class CurrencyCode(RootModel[QuoteCurrency]):
     """
     Strict Value Object for currency codes.
     """
 
     if TYPE_CHECKING:
-        Input: TypeAlias = "CurrencyCode" | Currency | str  # type: ignore[misc]
+        Input: TypeAlias = "CurrencyCode" | QuoteCurrency | str  # type: ignore[misc]
     else:
         Input: ClassVar[Any] = Annotated["CurrencyCode", BeforeValidator(lambda v: v)]
 
     @property
-    def value(self) -> Currency:
+    def value(self) -> QuoteCurrency:
         return self.root
+
+    def to_major(self) -> MajorCurrency:
+        """The major currency and factor: ``GBX`` -> ``GBP``/100; an ISO code -> itself/1."""
+        major, factor = _MINOR_UNIT_CODES.get(self.root, (self.root, 1))
+        return MajorCurrency(currency=CurrencyCode(QuoteCurrency(major)), factor=factor)
 
     def __str__(self) -> str:
         return str(self.root)
+
+
+class MajorCurrency(BaseModel):
+    """The major currency of a quote code and how many quote units make one major unit.
+
+    Divide a price quoted in the code by ``factor`` to get the price in ``currency``.
+    """
+
+    model_config = ConfigDict(frozen=True)
+
+    currency: CurrencyCode.Input
+    factor: PositiveInt
+
+    @field_validator("currency")
+    @classmethod
+    def _check_major(cls, v: CurrencyCode) -> CurrencyCode:
+        if v.root in _MINOR_UNIT_CODES:
+            raise ValueError(f"{v.root} is a minor-unit code, not a major currency")
+        return v
 
 
 class PriceVerificationError(Exception):
