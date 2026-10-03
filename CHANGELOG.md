@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+## [0.10.0] - 2026-10-03
 
 ### Changed (Breaking)
 - `Price` and the `OHLCV` fields `open`, `high`, `low`, `close` and `volume` now reject NaN and infinity with `ValidationError` ("Input should be a finite number"), on construction and on assignment to an `OHLCV`. Before, `Price(float("nan"))`, `Price("inf")`, `PriceOnDate(price=float("nan"), date="2026-10-02")` and `OHLCV(date=..., close=numpy.float64("nan"))` built silently, and `Price(float("nan")).model_dump_json()` gave `null`. This covers float, numpy and string input (`"nan"`, `"inf"`, `"-Infinity"`), `Price(root=...)`, `Price.model_validate(...)`, every `Price.Input` field such as `PriceOnDate.price` and `SecurityQuery.price_on`, and `PriceVerificationError(expected_price=..., actual_low=..., actual_high=..., actual_close=...)`, which raises `ValidationError` instead of carrying a NaN. The `price` argument of `SecurityQueryArgs`, `SearchArgs`, `HistoryQueryArgs` and `HistoryArgs` rejects them too, so `--price nan` fails. Finite values (zero, negatives, `1e308`) and `None` on `OHLCV` are still accepted, ints still coerce to float, and the JSON schemas are unchanged (#33)
