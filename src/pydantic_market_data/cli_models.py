@@ -97,7 +97,7 @@ class PRICE(float):
     def __get_pydantic_core_schema__(
         cls, _st: Any, _h: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.float_schema()
+        return core_schema.float_schema(allow_inf_nan=False)
 
 
 class LIMIT(int):
