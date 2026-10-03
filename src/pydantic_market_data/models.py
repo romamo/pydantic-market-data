@@ -11,6 +11,7 @@ from pydantic import (
     BeforeValidator,
     ConfigDict,
     Field,
+    FiniteFloat,
     GetCoreSchemaHandler,
     GetJsonSchemaHandler,
     PositiveInt,
@@ -163,7 +164,8 @@ class HistoryPeriod(str, Enum):
     MAX = "max"
 
 
-class Price(RootModel[float]):
+# FiniteFloat rejects NaN and infinity; the docstring stays as is because it is the schema text
+class Price(RootModel[FiniteFloat]):
     """
     Strict Value Object for prices to avoid primitive obsession everywhere.
     """
@@ -522,11 +524,11 @@ class OHLCV(BaseModel):
     """
 
     date: FlexibleDatetime
-    open: float | None = None
-    high: float | None = None
-    low: float | None = None
-    close: float | None = None
-    volume: float | None = None
+    open: FiniteFloat | None = None
+    high: FiniteFloat | None = None
+    low: FiniteFloat | None = None
+    close: FiniteFloat | None = None
+    volume: FiniteFloat | None = None
 
     model_config = ConfigDict(validate_assignment=True)
 
